@@ -1,0 +1,21 @@
+# FastAPI y servidor
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.0
+pydantic-settings==2.6.0
+
+# Base de datos
+aiosqlite==0.20.0
+
+# TMDB API
+requests==2.32.3
+
+# Embeddings locales
+sentence-transformers==3.3.1
+numpy==1.26.4
+
+# Claude AI (FASE 3)
+anthropic==0.39.0
+
+# Utilidades
+python-dotenv==1.0.1
