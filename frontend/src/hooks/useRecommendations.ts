@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
-import { api, Movie, RecommendationResponse } from '../services/api';
+import { api, Movie, RecommendationResponse, Filters } from '../services/api';
+import { FilmStatus } from '../components/FilmCard';
 
 interface UseRecommendationsReturn {
   movies: Movie[];
   loading: boolean;
   error: string | null;
-  getRecommendations: (vibe: string, limit?: number) => Promise<void>;
-  markWatched: (movieId: number, status: 'watched' | 'liked' | 'disliked') => Promise<void>;
+  getRecommendations: (vibe: string, limit?: number, filters?: Filters) => Promise<void>;
+  getVaultRecommendations: () => Promise<void>;
+  markWatched: (movieId: number, status: FilmStatus) => Promise<void>;
   clearError: () => void;
 }
 
@@ -15,59 +17,47 @@ export function useRecommendations(): UseRecommendationsReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getRecommendations = useCallback(async (vibe: string, limit: number = 10) => {
-    if (!vibe.trim()) {
-      setError('Please enter a vibe description');
-      return;
-    }
+  const handleResponse = (response: RecommendationResponse) => {
+    setMovies(response.movies);
+  };
 
+  const getRecommendations = useCallback(async (vibe: string, limit = 10, filters?: Filters) => {
+    if (!vibe.trim()) { setError('Please enter a vibe description'); return; }
     setLoading(true);
     setError(null);
-
     try {
-      const response: RecommendationResponse = await api.getRecommendationsByVibe({
-        vibe,
-        limit,
-      });
-      
-      setMovies(response.movies);
+      const response = await api.getRecommendationsByVibe({ vibe, limit, filters });
+      handleResponse(response);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to get recommendations';
-      setError(errorMessage);
-      console.error('Error getting recommendations:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get recommendations');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const markWatched = useCallback(async (
-    movieId: number,
-    status: 'watched' | 'liked' | 'disliked'
-  ) => {
+  const getVaultRecommendations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.getVaultRecommendations();
+      handleResponse(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Your vault is empty — add some films first');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const markWatched = useCallback(async (movieId: number, status: FilmStatus) => {
+    if (status === 'none') return;
     try {
       await api.markMovieWatched(movieId, { status });
-      
-      // Remove the movie from the current list
-      setMovies(prev => prev.filter(m => m.id !== movieId));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to mark movie';
-      setError(errorMessage);
       console.error('Error marking movie:', err);
     }
   }, []);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const clearError = useCallback(() => setError(null), []);
 
-  return {
-    movies,
-    loading,
-    error,
-    getRecommendations,
-    markWatched,
-    clearError,
-  };
+  return { movies, loading, error, getRecommendations, getVaultRecommendations, markWatched, clearError };
 }
-
-// Made with Bob

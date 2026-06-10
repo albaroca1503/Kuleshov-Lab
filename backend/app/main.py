@@ -8,12 +8,17 @@ from contextlib import asynccontextmanager
 import aiosqlite
 
 from app.config import get_settings
-from app.database import init_db, get_db, mark_movie_watched, get_user_stats
+from app.database import (
+    init_db, get_db, mark_movie_watched, get_user_stats,
+    get_user_settings, save_user_settings,
+)
 from app.models import (
-    VibeRequest, 
-    RecommendationResponse, 
+    VibeRequest,
+    RecommendationResponse,
     MarkWatchedRequest,
-    UserStatsResponse
+    UserStatsResponse,
+    UserSettingsRequest,
+    SignalResponse,
 )
 from app.recommender import get_recommendation_engine
 
@@ -132,15 +137,13 @@ async def mark_watched(
         Success message
     """
     try:
-        # Get movie title from TMDB if not provided
-        from app.tmdb import get_tmdb_client
-        tmdb = get_tmdb_client()
-        
-        try:
-            movie_data = tmdb.get_movie(movie_id)
-            movie_title = movie_data.get('title', f'Movie {movie_id}')
-        except:
-            movie_title = f'Movie {movie_id}'
+        movie_title = request.movie_title
+        if not movie_title:
+            try:
+                from app.tmdb import get_tmdb_client
+                movie_title = get_tmdb_client().get_movie(movie_id).get('title', f'Movie {movie_id}')
+            except Exception:
+                movie_title = f'Movie {movie_id}'
         
         await mark_movie_watched(
             db=db,
@@ -196,6 +199,127 @@ async def get_watched(db: aiosqlite.Connection = Depends(get_db)):
         
     except Exception as e:
         print(f"❌ Error getting watched movies: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/user/watched-movies")
+async def get_watched_movies_details(db: aiosqlite.Connection = Depends(get_db)):
+    """
+    Get watched/liked/disliked movies with full details from ChromaDB
+    """
+    from app.database import get_watched_movies_with_status
+    from app.vector_store import get_vector_store
+
+    try:
+        watched = await get_watched_movies_with_status(db, user_id=1)
+        if not watched:
+            return {"movies": [], "total": 0}
+
+        store = get_vector_store()
+        status_map = {w["movie_id"]: w for w in watched}
+        movie_ids = [w["movie_id"] for w in watched]
+
+        try:
+            results = store.collection.get(
+                ids=[str(mid) for mid in movie_ids],
+                include=["metadatas"],
+            )
+            movies = []
+            for i, mid_str in enumerate(results["ids"]):
+                mid = int(mid_str)
+                meta = results["metadatas"][i]
+                sw = status_map.get(mid, {})
+                genres_str = meta.get("genres", "")
+                genres = [g.strip() for g in genres_str.split(",") if g.strip()]
+                poster_path = meta.get("poster_path", "")
+                movies.append({
+                    "id": mid,
+                    "title": meta.get("title") or sw.get("movie_title", ""),
+                    "release_date": meta.get("release_date", ""),
+                    "genres": genres,
+                    "poster_url": f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None,
+                    "status": sw.get("status", "watched"),
+                    "watched_at": sw.get("watched_at", ""),
+                })
+        except Exception:
+            # Fallback: use only SQLite data (no poster)
+            movies = [
+                {"id": w["movie_id"], "title": w["movie_title"] or "", "release_date": "",
+                 "genres": [], "poster_url": None, "status": w["status"], "watched_at": w.get("watched_at", "")}
+                for w in watched
+            ]
+
+        return {"movies": movies, "total": len(movies)}
+
+    except Exception as e:
+        print(f"❌ Error getting watched movies: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/movies/{movie_id}/details")
+async def get_movie_details(
+    movie_id: int,
+    db: aiosqlite.Connection = Depends(get_db)
+):
+    """Rich movie details: streaming providers, reviews, director, cast, ratings"""
+    try:
+        from app.tmdb import get_tmdb_client
+        user_settings = await get_user_settings(db, user_id=1)
+        country = user_settings.get("country_code", "ES")
+        details = get_tmdb_client().get_movie_rich_details(movie_id, country_code=country)
+        return details
+    except Exception as e:
+        print(f"❌ Error fetching movie details: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/user/settings")
+async def get_user_settings_endpoint(db: aiosqlite.Connection = Depends(get_db)):
+    """Get user settings (country, streaming services)"""
+    try:
+        return await get_user_settings(db, user_id=1)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/user/settings")
+async def update_user_settings(
+    request: UserSettingsRequest,
+    db: aiosqlite.Connection = Depends(get_db)
+):
+    """Save user settings (country, streaming subscriptions)"""
+    try:
+        await save_user_settings(db, 1, request.country_code, request.streaming_service_ids)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/recommend/vault", response_model=RecommendationResponse)
+async def recommend_from_vault(db: aiosqlite.Connection = Depends(get_db)):
+    """Get recommendations based on the user's vault (taste profile)."""
+    try:
+        engine = get_recommendation_engine()
+        movies = await engine.recommend_from_vault(db=db, user_id=1, limit=20)
+        return RecommendationResponse(vibe="your vault", movies=movies, total=len(movies))
+    except Exception as e:
+        print(f"❌ Error generating vault recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recommend/signal", response_model=SignalResponse)
+async def get_signal(db: aiosqlite.Connection = Depends(get_db)):
+    """Get the movie of the day — one curated pick based on vault + context."""
+    try:
+        engine = get_recommendation_engine()
+        result = await engine.get_signal(db=db, user_id=1)
+        if not result:
+            raise HTTPException(status_code=404, detail="No signal available — add films to your vault first")
+        return SignalResponse(**result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error generating signal: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

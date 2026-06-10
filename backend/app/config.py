@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     
     # Embeddings
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: str = "all-mpnet-base-v2"  # Better semantic understanding (768 dim vs 384)
     
     class Config:
         env_file = ".env"

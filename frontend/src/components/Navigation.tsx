@@ -1,57 +1,84 @@
 import React from 'react';
-import { Settings, User, Menu } from 'lucide-react';
+import { Settings, User, Search } from 'lucide-react';
 
-interface NavigationProps {
-  currentView: string;
-  onViewChange: (view: string) => void;
-}
+export type View = 'vault' | 'engine' | 'signal';
 
-export const Navigation = ({ currentView, onViewChange }: NavigationProps) => {
-  const navItems = [
-    { id: 'vault', label: 'Vault', color: 'text-secondary' },
-    { id: 'engine', label: 'Engine', color: 'text-primary' },
-    { id: 'feed', label: 'Feed', color: 'text-secondary' },
-  ];
+const NAV: { id: View; label: string }[] = [
+  { id: 'vault', label: 'Vault' },
+  { id: 'engine', label: 'Engine' },
+  { id: 'signal', label: 'Signal' },
+];
 
+export function Navigation({
+  view,
+  onViewChange,
+  query,
+  onQueryChange,
+  onSettingsClick,
+}: {
+  view: View;
+  onViewChange: (v: View) => void;
+  query: string;
+  onQueryChange: (q: string) => void;
+  onSettingsClick?: () => void;
+}) {
   return (
-    <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-background/90 backdrop-blur-xl border-b border-outline-variant/10">
-      <div 
-        className="flex items-center gap-2 cursor-pointer"
-        onClick={() => onViewChange('engine')}
-      >
-        <span className="text-2xl font-headline italic tracking-tight text-on-surface">Kuleshov Lab</span>
-      </div>
-      
-      <nav className="hidden md:flex gap-10 items-center">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onViewChange(item.id)}
-            className={`font-mono text-[11px] uppercase tracking-[0.15em] transition-colors duration-200 ${
-              currentView === item.id 
-                ? 'text-primary font-bold' 
-                : 'text-secondary hover:text-primary'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6 lg:px-10">
+        <button
+          onClick={() => onViewChange('vault')}
+          className="font-display text-lg font-bold italic tracking-tight text-foreground transition-colors hover:text-primary sm:text-xl"
+        >
+          KULESHOV LAB
+        </button>
 
-      <div className="flex items-center gap-6">
-        <div className="relative hidden sm:block">
-          <input 
-            type="text" 
-            placeholder="SEARCH ARCHIVES..."
-            className="bg-transparent border-0 border-b border-outline-variant/30 text-[10px] font-mono tracking-widest focus:ring-0 focus:border-primary w-48 py-1 placeholder:text-secondary/30"
-          />
-        </div>
-        <div className="flex gap-4 text-on-surface/60">
-          <Settings className="w-5 h-5 cursor-pointer hover:text-primary transition-colors" />
-          <User className="w-5 h-5 cursor-pointer hover:text-primary transition-colors" />
-          <Menu className="w-5 h-5 md:hidden cursor-pointer hover:text-primary transition-colors" />
+        <nav className="ml-auto flex items-center gap-1 sm:gap-2 md:absolute md:left-1/2 md:ml-0 md:-translate-x-1/2">
+          {NAV.map((item) => {
+            const active = view === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id)}
+                className={`relative px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] transition-colors sm:text-xs ${
+                  active
+                    ? 'text-primary text-glow-signal'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {item.label}
+                {active && (
+                  <span className="absolute -bottom-px left-2.5 right-2.5 h-px bg-primary" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <div className="group hidden items-center gap-2 border-b border-border/70 pb-1 transition-colors focus-within:border-primary md:flex">
+            <Search className="size-3.5 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="SEARCH ARCHIVES..."
+              className="w-44 bg-transparent font-mono text-[11px] uppercase tracking-[0.15em] text-foreground placeholder:text-muted-foreground/70 focus:outline-none lg:w-56"
+            />
+          </div>
+          <button
+            onClick={onSettingsClick}
+            aria-label="Settings"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Settings className="size-4" />
+          </button>
+          <button
+            aria-label="Account"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <User className="size-4" />
+          </button>
         </div>
       </div>
     </header>
   );
-};
+}

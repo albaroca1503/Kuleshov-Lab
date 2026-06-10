@@ -17,5 +17,8 @@ numpy==1.26.4
 # Claude AI (FASE 3)
 anthropic==0.39.0
 
+# Vector database
+chromadb>=1.0.0
+
 # Utilidades
 python-dotenv==1.0.1

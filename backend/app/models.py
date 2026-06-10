@@ -35,9 +35,9 @@ class RecommendationResponse(BaseModel):
 
 class MarkWatchedRequest(BaseModel):
     """Request to mark a movie as watched"""
-    movie_id: int
     status: str = Field(default="watched", pattern="^(watched|liked|disliked)$")
     rating: Optional[float] = Field(default=None, ge=0, le=10)
+    movie_title: Optional[str] = None
 
 
 class UserStatsResponse(BaseModel):
@@ -47,5 +47,17 @@ class UserStatsResponse(BaseModel):
     total_disliked: int
     favorite_genres: list[tuple[str, int]]
     watch_time_hours: float
+
+
+class UserSettingsRequest(BaseModel):
+    country_code: str = "ES"
+    streaming_service_ids: list[int] = []
+
+
+class SignalResponse(BaseModel):
+    """Response model for the Movie of the Day/Week signal"""
+    movie: MovieResponse
+    signal_reason: str = Field(..., description="Why this film is THE one to watch right now")
+    context: str = Field(default="", description="Contextual framing (season, mood, moment)")
 
 # Made with Bob

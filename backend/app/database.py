@@ -63,6 +63,26 @@ async def init_db():
             )
         """)
         
+        # Taste profile — cached Claude-generated summary of user taste
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS taste_profile (
+                user_id INTEGER PRIMARY KEY,
+                profile_text TEXT NOT NULL,
+                movies_used_count INTEGER DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # User settings — country and streaming subscriptions
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id INTEGER PRIMARY KEY,
+                country_code TEXT DEFAULT 'ES',
+                streaming_service_ids TEXT DEFAULT '[]',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Create indexes
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_movies_user ON user_movies(user_id)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_user_movies_movie ON user_movies(movie_id)")
@@ -214,6 +234,131 @@ async def get_all_cached_movies(db: aiosqlite.Connection) -> list[dict]:
             }
             movies.append(movie)
     return movies
+
+
+async def get_taste_profile(db: aiosqlite.Connection, user_id: int = 1) -> dict | None:
+    """Return the cached taste profile or None if it doesn't exist yet"""
+    async with db.execute(
+        "SELECT profile_text, movies_used_count FROM taste_profile WHERE user_id = ?",
+        (user_id,)
+    ) as cursor:
+        row = await cursor.fetchone()
+        if row:
+            return {"profile_text": row[0], "movies_used_count": row[1]}
+        return None
+
+
+async def save_taste_profile(
+    db: aiosqlite.Connection, user_id: int, profile_text: str, movies_used_count: int
+) -> None:
+    """Upsert the taste profile for a user"""
+    await db.execute(
+        """INSERT INTO taste_profile (user_id, profile_text, movies_used_count, updated_at)
+           VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(user_id) DO UPDATE SET
+               profile_text = excluded.profile_text,
+               movies_used_count = excluded.movies_used_count,
+               updated_at = CURRENT_TIMESTAMP""",
+        (user_id, profile_text, movies_used_count)
+    )
+    await db.commit()
+
+
+async def get_liked_disliked_since(
+    db: aiosqlite.Connection, user_id: int = 1, offset: int = 0
+) -> tuple[list[str], list[str]]:
+    """Return (liked_titles, disliked_titles) starting from the given offset (for incremental updates)"""
+    liked, disliked = [], []
+    async with db.execute(
+        """SELECT movie_title, status FROM user_movies
+           WHERE user_id = ? AND status IN ('liked', 'disliked') AND movie_title IS NOT NULL
+           ORDER BY watched_at ASC LIMIT -1 OFFSET ?""",
+        (user_id, offset)
+    ) as cursor:
+        async for row in cursor:
+            if row[1] == 'liked':
+                liked.append(row[0])
+            else:
+                disliked.append(row[0])
+    return liked, disliked
+
+
+async def get_recent_liked_movies(
+    db: aiosqlite.Connection, user_id: int = 1, limit: int = 5
+) -> list[str]:
+    """Return titles of the most recently liked movies"""
+    async with db.execute(
+        """SELECT movie_title FROM user_movies
+           WHERE user_id = ? AND status = 'liked' AND movie_title IS NOT NULL
+           ORDER BY watched_at DESC LIMIT ?""",
+        (user_id, limit)
+    ) as cursor:
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]
+
+
+async def get_movies_by_status_pair(
+    db: aiosqlite.Connection, user_id: int = 1
+) -> tuple[list[int], list[int]]:
+    """Return (liked_ids, disliked_ids) for a user"""
+    liked, disliked = [], []
+    async with db.execute(
+        "SELECT movie_id, status FROM user_movies WHERE user_id = ? AND status IN ('liked', 'disliked')",
+        (user_id,)
+    ) as cursor:
+        async for row in cursor:
+            if row[1] == 'liked':
+                liked.append(row[0])
+            else:
+                disliked.append(row[0])
+    return liked, disliked
+
+
+async def get_watched_movies_with_status(db: aiosqlite.Connection, user_id: int = 1) -> list[dict]:
+    """Get all tracked movies with their status, ordered by most recent"""
+    async with db.execute(
+        "SELECT movie_id, movie_title, status, rating, watched_at FROM user_movies WHERE user_id = ? ORDER BY watched_at DESC",
+        (user_id,)
+    ) as cursor:
+        rows = await cursor.fetchall()
+        return [
+            {"movie_id": row[0], "movie_title": row[1], "status": row[2], "rating": row[3], "watched_at": row[4]}
+            for row in rows
+        ]
+
+
+async def get_user_settings(db: aiosqlite.Connection, user_id: int = 1) -> dict:
+    """Return user settings or sensible defaults"""
+    async with db.execute(
+        "SELECT country_code, streaming_service_ids FROM user_settings WHERE user_id = ?",
+        (user_id,)
+    ) as cursor:
+        row = await cursor.fetchone()
+        if row:
+            return {
+                "country_code": row[0],
+                "streaming_service_ids": json.loads(row[1]),
+            }
+        return {"country_code": "ES", "streaming_service_ids": []}
+
+
+async def save_user_settings(
+    db: aiosqlite.Connection,
+    user_id: int,
+    country_code: str,
+    streaming_service_ids: list[int],
+) -> None:
+    """Upsert user settings"""
+    await db.execute(
+        """INSERT INTO user_settings (user_id, country_code, streaming_service_ids, updated_at)
+           VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(user_id) DO UPDATE SET
+               country_code = excluded.country_code,
+               streaming_service_ids = excluded.streaming_service_ids,
+               updated_at = CURRENT_TIMESTAMP""",
+        (user_id, country_code, json.dumps(streaming_service_ids))
+    )
+    await db.commit()
 
 
 async def get_cache_stats(db: aiosqlite.Connection) -> dict:
