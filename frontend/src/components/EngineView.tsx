@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clapperboard, Sparkles, Loader2, X, AlertCircle, Archive } from 'lucide-react';
+import { Clapperboard, Sparkles, Loader2, X, AlertCircle, Star } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { Movie, Filters } from '../services/api';
 import { FilmCard, FilmStatus } from './FilmCard';
@@ -22,15 +22,15 @@ const VIBE_PROMPTS = [
 ];
 
 const STREAMING_SERVICES = [
-  { id: 8,   name: 'Netflix',    logo: '/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
-  { id: 119, name: 'Prime',      logo: '/68MNrwlkpF7WnmNPXLah69CR5cb.jpg' },
-  { id: 337, name: 'Disney+',    logo: '/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg' },
-  { id: 350, name: 'Apple TV+',  logo: '/6uhKBfmtzFqOcLousHwZuzcrScK.jpg' },
-  { id: 11,  name: 'MUBI',       logo: '/fq3wyOs1RHyz2yfzsb4sck7aWRG.jpg' },
-  { id: 62,  name: 'Filmin',     logo: '/iqB6BSBA6oKlzVHmFcAH8BTLtCB.jpg' },
-  { id: 384, name: 'Max',        logo: '/Ajqyt5iiK25FYKuNYo4dSOrMC5R.jpg' },
-  { id: 531, name: 'Paramount+', logo: '/fi83B1oztoS47xxcemFdPMhIzK.jpg' },
-  { id: 149, name: 'Movistar+',  logo: '/7N2bFVaYWiFfLQy5bGPvtyJRxCt.jpg' },
+  { id: 8,    name: 'Netflix',    logo: '/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
+  { id: 119,  name: 'Prime',      logo: '/68MNrwlkpF7WnmNPXLah69CR5cb.jpg' },
+  { id: 337,  name: 'Disney+',    logo: '/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg' },
+  { id: 350,  name: 'Apple TV+',  logo: '/6uhKBfmtzFqOcLousHwZuzcrScK.jpg' },
+  { id: 11,   name: 'MUBI',       logo: '/x570VpH2C9EKDf1riP83rYc5dnL.jpg' },
+  { id: 63,   name: 'Filmin',     logo: '/kO2SWXvDCHAquaUuTJBuZkTBAuU.jpg' },
+  { id: 1899, name: 'Max',        logo: '/jbe4gVSfRlbPTdESXhEKpornsfu.jpg' },
+  { id: 531,  name: 'Paramount+', logo: '/h5DcR0J2EESLitnhR8xLG1QymTE.jpg' },
+  { id: 149,  name: 'Movistar+',  logo: '/f6TRLB3H4jDpFEZ0z2KWSSvu1SB.jpg' },
 ];
 
 export function EngineView({
@@ -142,10 +142,12 @@ export function EngineView({
             type="button"
             disabled={isLoading}
             onClick={handleVaultRecommend}
-            className="ml-auto flex items-center gap-2 border border-primary/60 bg-primary/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+            className="ml-auto flex items-center gap-2 rounded-full border border-primary/60 bg-primary/10 px-5 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
           >
-            {vaultLoading ? <Loader2 className="size-3 animate-spin" /> : <Archive className="size-3" />}
-            Vault Recommends
+            {vaultLoading
+              ? <Loader2 className="size-4 animate-spin" />
+              : <Star className="size-4 fill-primary/60 stroke-primary" />}
+            Surprise Me
           </button>
         </div>
 

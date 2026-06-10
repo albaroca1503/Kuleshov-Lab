@@ -8,11 +8,11 @@ const STREAMING_SERVICES = [
   { id: 119, name: 'Prime',       logo: '/68MNrwlkpF7WnmNPXLah69CR5cb.jpg' },
   { id: 337, name: 'Disney+',     logo: '/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg' },
   { id: 350, name: 'Apple TV+',   logo: '/6uhKBfmtzFqOcLousHwZuzcrScK.jpg' },
-  { id: 11,  name: 'MUBI',        logo: '/fq3wyOs1RHyz2yfzsb4sck7aWRG.jpg' },
-  { id: 62,  name: 'Filmin',      logo: '/iqB6BSBA6oKlzVHmFcAH8BTLtCB.jpg' },
-  { id: 384, name: 'Max',         logo: '/Ajqyt5iiK25FYKuNYo4dSOrMC5R.jpg' },
-  { id: 531, name: 'Paramount+',  logo: '/fi83B1oztoS47xxcemFdPMhIzK.jpg' },
-  { id: 149, name: 'Movistar+',   logo: '/7N2bFVaYWiFfLQy5bGPvtyJRxCt.jpg' },
+  { id: 11,   name: 'MUBI',        logo: '/x570VpH2C9EKDf1riP83rYc5dnL.jpg' },
+  { id: 63,   name: 'Filmin',      logo: '/kO2SWXvDCHAquaUuTJBuZkTBAuU.jpg' },
+  { id: 1899, name: 'Max',         logo: '/jbe4gVSfRlbPTdESXhEKpornsfu.jpg' },
+  { id: 531,  name: 'Paramount+',  logo: '/h5DcR0J2EESLitnhR8xLG1QymTE.jpg' },
+  { id: 149,  name: 'Movistar+',   logo: '/f6TRLB3H4jDpFEZ0z2KWSSvu1SB.jpg' },
   { id: 39,  name: 'Now TV',      logo: '/pvske06mnSHKqBJLGQHIEQ1EDQP.jpg' },
 ];
 

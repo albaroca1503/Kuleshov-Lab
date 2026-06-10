@@ -96,7 +96,7 @@ export function FilmModal({
               <h2 className="font-display text-3xl font-bold uppercase italic leading-none tracking-tight text-foreground sm:text-4xl">
                 {movie.title}
               </h2>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <span className="text-amber">{year}</span>
                 {runtime && <span>{runtime}</span>}
                 {details?.director && <span>{details.director}</span>}
@@ -104,7 +104,7 @@ export function FilmModal({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {movie.genres?.map((g) => (
-                  <span key={g} className="border border-border/70 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+                  <span key={g} className="border border-border/70 px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                     {g}
                   </span>
                 ))}
@@ -130,14 +130,25 @@ export function FilmModal({
                 <Archive className="size-3.5" />
                 {status === 'watched' ? 'Archived' : 'Archive'}
               </ActionBtn>
+              {details?.trailer_key && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${details.trailer_key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 border border-primary/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-primary transition-colors hover:bg-primary/10"
+                >
+                  <Play className="size-3 fill-current" />
+                  Trailer
+                </a>
+              )}
               {imdbUrl && (
                 <a href={imdbUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                  className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-primary">
                   IMDb <ExternalLink className="size-3" />
                 </a>
               )}
               <a href={letterboxdUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-primary">
                 Letterboxd <ExternalLink className="size-3" />
               </a>
             </div>
@@ -157,20 +168,20 @@ export function FilmModal({
             <Section title="Where to watch">
               <div className="flex flex-wrap gap-2">
                 {subscribed.map((p) => (
-                  <span key={p.id} className="flex items-center gap-1.5 border border-primary/60 bg-primary/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
+                  <span key={p.id} className="flex items-center gap-1.5 border border-primary/60 bg-primary/10 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] text-primary">
                     <Check className="size-3" />
                     {p.name}
                   </span>
                 ))}
                 {other.map((p) => (
-                  <span key={p.id} className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <span key={p.id} className="flex items-center gap-1.5 border border-border/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground">
                     <Play className="size-3" />
                     {p.name}
                   </span>
                 ))}
               </div>
               {subscribed.length === 0 && other.length > 0 && (
-                <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                <p className="mt-2 font-mono text-xs uppercase tracking-[0.1em] text-muted-foreground">
                   Not on your subscriptions — available to rent or on other platforms
                 </p>
               )}
@@ -187,7 +198,7 @@ export function FilmModal({
           {/* cast */}
           {details?.cast && details.cast.length > 0 && (
             <Section title="Cast">
-              <p className="font-mono text-xs text-muted-foreground">{details.cast.join('  ·  ')}</p>
+              <p className="font-mono text-sm text-muted-foreground">{details.cast.join('  ·  ')}</p>
             </Section>
           )}
 
@@ -200,7 +211,7 @@ export function FilmModal({
                     <p className="text-sm italic leading-relaxed text-foreground/80">
                       &quot;{r.content.slice(0, 200)}{r.content.length > 200 ? '…' : ''}&quot;
                     </p>
-                    <footer className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-amber">
+                    <footer className="mt-1 font-mono text-xs uppercase tracking-[0.16em] text-amber">
                       — {r.author}
                     </footer>
                   </blockquote>
@@ -217,7 +228,7 @@ export function FilmModal({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-7">
-      <h3 className="mb-3 font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{title}</h3>
+      <h3 className="mb-3 font-mono text-xs uppercase tracking-[0.24em] text-muted-foreground">{title}</h3>
       {children}
     </section>
   );
@@ -231,7 +242,7 @@ function ActionBtn({ children, active, onClick }: {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors ${
+      className={`flex items-center gap-1.5 border px-3 py-1.5 font-mono text-xs uppercase tracking-[0.14em] transition-colors ${
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border/70 text-muted-foreground hover:border-primary hover:text-primary'

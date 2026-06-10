@@ -18,7 +18,8 @@ export function useRecommendations(): UseRecommendationsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const handleResponse = (response: RecommendationResponse) => {
-    setMovies(response.movies);
+    const sorted = [...response.movies].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    setMovies(sorted);
   };
 
   const getRecommendations = useCallback(async (vibe: string, limit = 10, filters?: Filters) => {
