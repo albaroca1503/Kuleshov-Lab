@@ -14,7 +14,7 @@ class AIClient:
     """AI service for re-ranking and generating film curation text"""
 
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or settings.ai_api_key
+        self.api_key = api_key or settings.claude_api_key
         if not self.api_key:
             print("⚠️  AI API key not configured - re-ranking disabled")
             self.client = None
@@ -255,25 +255,21 @@ Rules:
             json_text = response_text[start:end]
             rankings = json.loads(json_text)
             
-            # Create title to movie mapping
             title_map = {movie['title'].lower(): movie for movie in candidates}
-            
+            num_ranked = len(rankings)
+
             reranked = []
             for item in rankings:
-                # Strip trailing " (YYYY)" that the AI sometimes appends to titles
                 title_lower = re.sub(r'\s*\(\d{4}\)\s*$', '', item['title']).lower().strip()
                 if title_lower in title_map:
                     movie = title_map[title_lower].copy()
                     movie['reason'] = item.get('reason', '')
-                    movie['ai_rank'] = item.get('rank', 999)
+                    rank = item.get('rank', num_ranked)
+                    # Replace ChromaDB score with AI rank-based score (rank 1 → ~1.0, last → ~0.6)
+                    movie['score'] = round(1.0 - (rank - 1) / max(num_ranked, 1) * 0.4, 3)
                     reranked.append(movie)
-            
-            # Add any missing candidates at the end
-            reranked_titles = {m['title'].lower() for m in reranked}
-            for movie in candidates:
-                if movie['title'].lower() not in reranked_titles:
-                    reranked.append(movie)
-            
+
+            # Only return AI-curated results — no reason = not a real match
             return reranked
             
         except Exception as e:

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # API Keys
     tmdb_api_key: str
-    ai_api_key: str | None = None
+    claude_api_key: str | None = None
 
     # AI models (override to use a different provider/model)
     ai_model_fast: str = "claude-haiku-4-5-20251001"

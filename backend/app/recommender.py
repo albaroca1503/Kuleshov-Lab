@@ -76,9 +76,12 @@ class RecommendationEngine:
         )
         print(f"🔍 ChromaDB returned {len(candidates)} candidates")
 
-        # 4. Exclude watched movies
-        candidates = [m for m in candidates if m["id"] not in watched_ids]
-        print(f"📋 {len(candidates)} candidates after excluding {len(watched_ids)} watched")
+        # 4. Exclude watched movies and movies without a poster (look broken in the UI)
+        candidates = [
+            m for m in candidates
+            if m["id"] not in watched_ids and m.get("poster_path")
+        ]
+        print(f"📋 {len(candidates)} candidates after filtering")
 
         # 4. Genre filter (post-query, since ChromaDB can't filter on CSV metadata)
         if filters and filters.get("genres"):
@@ -206,7 +209,7 @@ class RecommendationEngine:
         vibe_embedding = self.embedding_service.encode(vibe)
         query_embedding = self._apply_feedback(vibe_embedding, liked_ids, disliked_ids)
         raw = self.vector_store.search(query_embedding=query_embedding, n_results=min(50, indexed))
-        candidates = [m for m in raw if m["id"] not in watched_ids][:10]
+        candidates = [m for m in raw if m["id"] not in watched_ids and m.get("poster_path")][:10]
 
         headlines = await headlines_task
 
@@ -249,7 +252,8 @@ class RecommendationEngine:
         return f"A film perfect for a {datetime.now().strftime('%B')} evening"
 
     def _find_candidate_by_title(self, candidates: list[dict], title: str) -> Optional[dict]:
-        title_lower = title.lower()
+        import re
+        title_lower = re.sub(r'\s*\(\d{4}\)\s*$', '', title).lower().strip()
         return next((c for c in candidates if c["title"].lower() == title_lower), None)
 
     def _apply_feedback(
