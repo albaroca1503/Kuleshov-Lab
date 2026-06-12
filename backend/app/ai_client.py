@@ -1,5 +1,5 @@
 """
-Claude AI client for intelligent re-ranking and explanations
+AI client for intelligent re-ranking and explanations
 """
 import json
 import re
@@ -10,33 +10,23 @@ from app.config import get_settings
 settings = get_settings()
 
 
-class ClaudeService:
-    """Service for Claude AI interactions"""
-    
+class AIClient:
+    """AI service for re-ranking and generating film curation text"""
+
     def __init__(self, api_key: Optional[str] = None):
-        """
-        Initialize Claude client
-        
-        Args:
-            api_key: Anthropic API key (optional, uses settings if not provided)
-        """
-        self.api_key = api_key or settings.claude_api_key
+        self.api_key = api_key or settings.ai_api_key
         if not self.api_key:
-            print("⚠️  Claude API key not configured - re-ranking disabled")
+            print("⚠️  AI API key not configured - re-ranking disabled")
             self.client = None
         else:
             self.client = AsyncAnthropic(api_key=self.api_key)
-            print("✅ Claude client initialized")
+            print("✅ AI client initialized")
     
     def is_available(self) -> bool:
-        """Check if Claude is available"""
         return self.client is not None
     
     async def expand_vibe(self, vibe: str) -> str:
-        """
-        Use Claude to expand a vibe query into a rich semantic description
-        for better embedding quality. Falls back to the original vibe if unavailable.
-        """
+        """Expand a vibe query into a richer semantic description for better embedding quality."""
         if not self.is_available():
             return vibe
 
@@ -51,7 +41,7 @@ Return only the expanded description, no explanation or preamble."""
 
         try:
             response = await self.client.messages.create(
-                model="claude-haiku-4-5-20251001",
+                model=settings.ai_model_fast,
                 max_tokens=200,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -106,7 +96,7 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
 
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-6",
+                model=settings.ai_model_smart,
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -124,8 +114,8 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
         limit: int = 10
     ) -> list[dict]:
         """
-        Use Claude to re-rank candidates and provide explanations
-        
+        Re-rank candidates and add explanations.
+
         Args:
             vibe: User's vibe description
             candidates: List of candidate movies (top 20-30 from embeddings)
@@ -136,19 +126,14 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
             List of re-ranked movies with explanations
         """
         if not self.is_available():
-            print("⚠️  Claude not available, returning candidates as-is")
             return candidates[:limit]
-        
-        # Format candidates for Claude
-        movies_text = self._format_movies_for_claude(candidates)
-        
-        # Build prompt
+
+        movies_text = self._format_movies_for_prompt(candidates)
         prompt = self._build_rerank_prompt(vibe, movies_text, user_profile, taste_profile)
         
         try:
-            # Call Claude with prompt caching
             response = await self.client.messages.create(
-                model="claude-sonnet-4-6",
+                model=settings.ai_model_smart,
                 max_tokens=4096,
                 system=[
                     {
@@ -165,19 +150,16 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
                 ]
             )
             
-            # Parse response
             result_text = response.content[0].text
-            recommendations = self._parse_claude_response(result_text, candidates)
-            
-            print(f"✨ Claude re-ranked {len(recommendations)} movies")
+            recommendations = self._parse_rerank_response(result_text, candidates)
+            print(f"✨ Re-ranked {len(recommendations)} movies")
             return recommendations[:limit]
-            
+
         except Exception as e:
-            print(f"❌ Error calling Claude: {e}")
+            print(f"❌ Error calling AI: {e}")
             return candidates[:limit]
-    
-    def _format_movies_for_claude(self, movies: list[dict]) -> str:
-        """Format movies for Claude prompt"""
+
+    def _format_movies_for_prompt(self, movies: list[dict]) -> str:
         lines = []
         for i, movie in enumerate(movies, 1):
             # Handle genres - could be list of strings or list of dicts
@@ -209,7 +191,6 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
         user_profile: Optional[dict],
         taste_profile: Optional[str] = None,
     ) -> str:
-        """Build prompt for Claude"""
 
         profile_text = ""
         if user_profile:
@@ -249,8 +230,7 @@ Rules:
 - reason must explain why the film FITS, never why it doesn't
 - Return ONLY the JSON array, no markdown, no extra text"""
     
-    def _parse_claude_response(self, response_text: str, candidates: list[dict]) -> list[dict]:
-        """Parse Claude's JSON response and match with candidates"""
+    def _parse_rerank_response(self, response_text: str, candidates: list[dict]) -> list[dict]:
         try:
             # Remove markdown code blocks if present
             if '```json' in response_text:
@@ -278,15 +258,14 @@ Rules:
             # Create title to movie mapping
             title_map = {movie['title'].lower(): movie for movie in candidates}
             
-            # Re-order candidates based on Claude's ranking
             reranked = []
             for item in rankings:
-                # Claude often appends " (YYYY)" to titles — strip before lookup
+                # Strip trailing " (YYYY)" that the AI sometimes appends to titles
                 title_lower = re.sub(r'\s*\(\d{4}\)\s*$', '', item['title']).lower().strip()
                 if title_lower in title_map:
                     movie = title_map[title_lower].copy()
                     movie['reason'] = item.get('reason', '')
-                    movie['claude_rank'] = item.get('rank', 999)
+                    movie['ai_rank'] = item.get('rank', 999)
                     reranked.append(movie)
             
             # Add any missing candidates at the end
@@ -298,8 +277,7 @@ Rules:
             return reranked
             
         except Exception as e:
-            print(f"⚠️  Error parsing Claude response: {e}")
-            print(f"Response: {response_text[:500]}")
+            print(f"⚠️  Error parsing AI response: {e}")
             return candidates
 
 
@@ -334,7 +312,7 @@ REASON: [2-3 sentence paragraph]"""
 
         try:
             response = await self.client.messages.create(
-                model="claude-haiku-4-5-20251001",
+                model=settings.ai_model_fast,
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
             )
@@ -350,15 +328,11 @@ REASON: [2-3 sentence paragraph]"""
             return None, ""
 
 
-# Global service instance
-_service: Optional[ClaudeService] = None
+_client: Optional[AIClient] = None
 
 
-def get_claude_service() -> ClaudeService:
-    """Get or create Claude service instance"""
-    global _service
-    if _service is None:
-        _service = ClaudeService()
-    return _service
-
-# Made with Bob
+def get_ai_client() -> AIClient:
+    global _client
+    if _client is None:
+        _client = AIClient()
+    return _client

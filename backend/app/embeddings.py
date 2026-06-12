@@ -227,4 +227,3 @@ def get_embedding_service() -> EmbeddingService:
         _service = EmbeddingService(settings.embedding_model)
     return _service
 
-# Made with Bob

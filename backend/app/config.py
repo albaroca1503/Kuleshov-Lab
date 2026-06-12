@@ -10,7 +10,11 @@ class Settings(BaseSettings):
     
     # API Keys
     tmdb_api_key: str
-    claude_api_key: str | None = None
+    ai_api_key: str | None = None
+
+    # AI models (override to use a different provider/model)
+    ai_model_fast: str = "claude-haiku-4-5-20251001"
+    ai_model_smart: str = "claude-sonnet-4-6"
     
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/movies.db"
@@ -36,4 +40,3 @@ def get_settings() -> Settings:
     """Get cached settings instance"""
     return Settings()
 
-# Made with Bob

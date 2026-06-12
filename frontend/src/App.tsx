@@ -12,7 +12,6 @@ import { Filters } from './services/api';
 
 export default function App() {
   const [view, setView] = useState<View>('engine');
-  const [query, setQuery] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [statuses, setStatuses] = useState<Record<number, FilmStatus>>({});
 
@@ -49,8 +48,6 @@ export default function App() {
       <Navigation
         view={view}
         onViewChange={setView}
-        query={query}
-        onQueryChange={setQuery}
         onSettingsClick={() => setShowSettings(true)}
       />
 

@@ -7,7 +7,7 @@ from typing import Optional
 
 from app.embeddings import get_embedding_service
 from app.tmdb import get_tmdb_client
-from app.claude import get_claude_service
+from app.ai_client import get_ai_client
 from app.vector_store import get_vector_store
 from app.database import (
     get_watched_movies, get_user_stats, get_movies_by_status_pair,
@@ -22,7 +22,7 @@ class RecommendationEngine:
     def __init__(self):
         self.embedding_service = get_embedding_service()
         self.tmdb_client = get_tmdb_client()
-        self.claude_service = get_claude_service()
+        self.ai_client = get_ai_client()
         self.vector_store = get_vector_store()
 
     async def recommend_by_vibe(
@@ -41,7 +41,7 @@ class RecommendationEngine:
         2. Query ChromaDB for the top candidates (entire indexed catalogue)
         3. Exclude watched movies
         4. Apply genre filter post-query (ChromaDB metadata only supports year)
-        5. Claude re-ranks and adds explanations
+        5. AI re-ranks and adds explanations
         """
         indexed = self.vector_store.count()
         print(f"🎬 Vibe: '{vibe}' — searching {indexed} indexed movies")
@@ -50,8 +50,8 @@ class RecommendationEngine:
             print("⚠️  ChromaDB is empty. Run: python ingest_movies.py")
             return []
 
-        # 1. Expand vibe — Claude first, fallback to hardcoded rules
-        expanded = await self.claude_service.expand_vibe(vibe)
+        # 1. Expand vibe with AI, fall back to local rules
+        expanded = await self.ai_client.expand_vibe(vibe)
         if expanded == vibe:
             expanded = self.embedding_service.expand_vibe(vibe)
         vibe_embedding = self.embedding_service.encode(expanded)
@@ -89,15 +89,12 @@ class RecommendationEngine:
         if not candidates:
             return []
 
-        # 5. Take top 25 for Claude re-ranking (50 would exceed token budget)
         top_candidates = candidates[:25]
 
-        # 6. Claude re-ranks and explains
-        if self.claude_service.is_available():
-            print("🤖 Claude re-ranking…")
+        if self.ai_client.is_available():
             user_profile = await get_user_stats(db, user_id)
             taste_profile = await self._get_or_update_taste_profile(db, user_id)
-            reranked = await self.claude_service.rerank_and_explain(
+            reranked = await self.ai_client.rerank_and_explain(
                 vibe=vibe,
                 candidates=top_candidates,
                 user_profile=user_profile,
@@ -105,7 +102,6 @@ class RecommendationEngine:
                 limit=limit,
             )
         else:
-            print("⚠️  Claude unavailable — using embedding scores")
             reranked = top_candidates[:limit]
 
         recommendations = [self._movie_to_response(m, m.get("score", 0)) for m in reranked]
@@ -135,7 +131,7 @@ class RecommendationEngine:
             return None
 
         print(f"🎭 Building taste profile ({new_count} new movies, {total} total)…")
-        new_profile = await self.claude_service.build_taste_profile(
+        new_profile = await self.ai_client.build_taste_profile(
             liked=liked_new,
             disliked=disliked_new,
             current_profile=cached["profile_text"] if cached else None,
@@ -190,8 +186,8 @@ class RecommendationEngine:
 
         signal_reason = candidates[0].reason or "A film worth watching tonight."
 
-        if self.claude_service.is_available():
-            film_title, reason = await self.claude_service.generate_signal(
+        if self.ai_client.is_available():
+            film_title, reason = await self.ai_client.generate_signal(
                 candidates=[c.model_dump() for c in candidates],
                 taste_profile=taste_text,
                 context=context,

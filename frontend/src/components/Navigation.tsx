@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, User, Search } from 'lucide-react';
+import { Settings, User } from 'lucide-react';
 
 export type View = 'vault' | 'engine' | 'signal';
 
@@ -12,14 +12,10 @@ const NAV: { id: View; label: string }[] = [
 export function Navigation({
   view,
   onViewChange,
-  query,
-  onQueryChange,
   onSettingsClick,
 }: {
   view: View;
   onViewChange: (v: View) => void;
-  query: string;
-  onQueryChange: (q: string) => void;
   onSettingsClick?: () => void;
 }) {
   return (
@@ -55,15 +51,6 @@ export function Navigation({
         </nav>
 
         <div className="ml-auto flex items-center gap-3 md:ml-0">
-          <div className="group hidden items-center gap-2 border-b border-border/70 pb-1 transition-colors focus-within:border-primary md:flex">
-            <Search className="size-3.5 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="SEARCH ARCHIVES..."
-              className="w-44 bg-transparent font-mono text-[11px] uppercase tracking-[0.15em] text-foreground placeholder:text-muted-foreground/70 focus:outline-none lg:w-56"
-            />
-          </div>
           <button
             onClick={onSettingsClick}
             aria-label="Settings"

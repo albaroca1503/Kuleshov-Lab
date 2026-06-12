@@ -9,4 +9,3 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-// Made with Bob

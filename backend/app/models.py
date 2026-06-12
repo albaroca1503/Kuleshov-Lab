@@ -60,4 +60,3 @@ class SignalResponse(BaseModel):
     signal_reason: str = Field(..., description="Why this film is THE one to watch right now")
     context: str = Field(default="", description="Contextual framing (season, mood, moment)")
 
-# Made with Bob

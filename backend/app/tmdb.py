@@ -173,4 +173,3 @@ def get_tmdb_client() -> TMDBClient:
         _client = TMDBClient(settings.tmdb_api_key)
     return _client
 
-# Made with Bob

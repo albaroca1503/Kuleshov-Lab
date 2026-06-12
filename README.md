@@ -1,175 +1,102 @@
 # Kuleshov Lab
 
 <div align="center">
-  <h3>🎬 A sophisticated cinematic curation platform</h3>
-  <p>Discover, curate, and experience films through an elegant, film noir-inspired interface</p>
+  <p>AI-powered cinematic curation platform</p>
+  <p>Discover films through mood, atmosphere, and vibe — not just genres or ratings</p>
 </div>
 
 ---
 
-## 📁 Project Structure
+## Features
 
-```
-Kuleshov-Lab/
-├── frontend/          # React + TypeScript web application
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── services/       # API services
-│   │   ├── App.tsx         # Main application
-│   │   └── index.css       # Global styles
-│   ├── package.json
-│   └── README.md
-├── backend/           # FastAPI backend
-│   ├── app/
-│   │   ├── main.py         # FastAPI application
-│   │   ├── models.py       # Data models
-│   │   ├── database.py     # Database operations
-│   │   ├── recommender.py  # Recommendation engine
-│   │   ├── embeddings.py   # Semantic embeddings
-│   │   ├── tmdb.py         # TMDB API client
-│   │   └── claude.py       # Claude AI integration
-│   ├── requirements.txt
-│   └── README.md
-├── start.sh           # Quick start script
-├── INTEGRATION.md     # Integration documentation
-└── LICENSE
-```
+- **Engine** — describe a vibe in natural language and get a curated list of films that match the feeling, not just the genre
+- **Vault** — your personal film archive with stats, taste analysis, and a downloadable dossier
+- **Signal** — one film pick per day, chosen by AI based on your taste profile and the time of year
 
-## 🚀 Quick Start
+## How it works
 
-### Option 1: Use the Start Script (Recommended)
+1. You describe what you want to feel — *"paranoid surveillance, cold and fractured"* or *"a melancholic rainy afternoon in Tokyo"*
+2. The description is embedded as a vector and matched against ~8,000 indexed films in ChromaDB using semantic similarity
+3. Liked and disliked films shift the query vector over time (Rocchio algorithm), so results improve as you use the app
+4. If an AI API key is configured, the top candidates are re-ranked by a language model that understands cultural context, not just keywords
 
-```bash
-./start.sh
-```
+## Stack
 
-This will start both the backend and frontend automatically.
+**Frontend:** React 19 + TypeScript + Vite + Tailwind CSS 4  
+**Backend:** FastAPI + ChromaDB + SQLite + TMDB API  
+**Embeddings:** Sentence-Transformers (local, no API cost)  
+**AI re-ranking:** optional — the app works fully without it
 
-### Option 2: Manual Start
+## Setup
 
-**Terminal 1 - Backend:**
+### Requirements
+
+- Python 3.11+
+- Node.js 18+
+- [TMDB API key](https://www.themoviedb.org/settings/api) (free)
+- AI API key (optional — needed for intelligent re-ranking and Signal)
+
+### 1. Backend
+
 ```bash
 cd backend
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-### Access the Application
-
-- **Frontend**: http://localhost:3001
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-
-## ⚙️ Configuration
-
-### Backend Setup
-
-1. Copy the environment file:
-```bash
-cd backend
+pip install -r requirements.txt
 cp .env.example .env
 ```
 
-2. Add your API keys to `.env`:
+Edit `.env` and add your keys:
+
 ```env
-TMDB_API_KEY=your_tmdb_api_key_here
-CLAUDE_API_KEY=your_claude_api_key_here  # Optional, for Phase 3
-FRONTEND_URL=http://localhost:3001
+TMDB_API_KEY=your_key_here
+AI_API_KEY=your_key_here   # optional
 ```
 
-3. Install dependencies:
+### 2. Populate the vector store
+
+The first time you run the app, index movies from TMDB into ChromaDB:
+
 ```bash
-pip install -r requirements.txt
+cd backend
+python ingest_movies.py
+# default: ~1,600 movies — takes a few minutes
+# python ingest_movies.py --pages 100  # ~8,000 movies
 ```
 
-### Frontend Setup
+This downloads movie data from TMDB and generates local embeddings. Only needed once.
 
-1. Install dependencies:
+### 3. Frontend
+
 ```bash
 cd frontend
 npm install
 ```
 
-2. The frontend is pre-configured to connect to the backend on port 8000.
+### 4. Run
 
-## 🎨 About Kuleshov Lab
+```bash
+./start.sh
+```
 
-Kuleshov Lab is named after Soviet filmmaker Lev Kuleshov, pioneer of montage theory and the "Kuleshov Effect" - demonstrating how context and juxtaposition create meaning in cinema.
+Or manually:
 
-This platform embodies that philosophy by helping users discover films through mood, atmosphere, and cinematic qualities rather than just genres or ratings.
+```bash
+# Terminal 1
+cd backend && uvicorn app.main:app --reload --port 8000
 
-### Key Features
+# Terminal 2
+cd frontend && npm run dev
+```
 
-- **🎭 Engine**: Vibe-based film discovery using semantic search
-- **🗄️ Vault**: Personal curated collection with statistics
-- **📱 Feed**: Swipe-style film recommendations (coming soon)
-- **🎞️ Cinematic UI**: Film noir aesthetic with authentic grain overlay
-- **🤖 AI-Powered**: Semantic embeddings for intelligent recommendations
+- Frontend: [http://localhost:3001](http://localhost:3001)
+- API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## 🛠️ Technology Stack
+## License
 
-### Frontend
-- React 19 + TypeScript
-- Vite for blazing-fast development
-- Tailwind CSS 4 for styling
-- Motion for smooth animations
-- Lucide React for icons
-
-### Backend
-- FastAPI (Python)
-- SQLite with aiosqlite
-- Sentence Transformers for embeddings
-- TMDB API for movie data
-- Claude AI for intelligent re-ranking (optional)
-
-## 📚 Documentation
-
-- [Frontend Documentation](frontend/README.md)
-- [Backend Architecture](BACKEND_ARCHITECTURE.md)
-- [Integration Guide](INTEGRATION.md)
-- [MVP Plan](MVP_PLAN.md)
-
-## 🎯 How It Works
-
-1. **Describe a Vibe**: Enter a mood or atmosphere (e.g., "A neon-drenched 80s thriller")
-2. **Semantic Search**: The system uses AI embeddings to understand your description
-3. **Get Recommendations**: Receive curated film suggestions that match your vibe
-4. **Build Your Vault**: Save and track films you've watched
-
-## 🐛 Troubleshooting
-
-### Backend not starting?
-- Check that port 8000 is available
-- Verify your `.env` file has the required API keys
-- Ensure Python dependencies are installed
-
-### Frontend not connecting?
-- Verify the backend is running on port 8000
-- Check browser console for CORS errors
-- Ensure you're accessing http://localhost:3001
-
-### No recommendations appearing?
-- Check that TMDB_API_KEY is set in backend/.env
-- Verify the backend logs for errors
-- Try a different search query
-
-For more detailed troubleshooting, see [INTEGRATION.md](INTEGRATION.md)
-
-## 📄 License
-
-See [LICENSE](LICENSE) file for details.
+See [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
-  <p><i>"In the cinema, the combination of shots is the essence of the art."</i></p>
-  <p>— Lev Kuleshov</p>
-  <br>
-  <p><b>Made with ❤️ by Bob</b></p>
+  <i>"In the cinema, the combination of shots is the essence of the art."</i><br>
+  — Lev Kuleshov
 </div>

@@ -92,7 +92,7 @@ class MovieVectorStore:
     ) -> list[dict]:
         """
         Find the n most similar movies to the query embedding.
-        Returns list of dicts ready for Claude re-ranking and MovieResponse.
+        Returns list of dicts ready for re-ranking and MovieResponse.
         """
         total = self.collection.count()
         if total == 0:

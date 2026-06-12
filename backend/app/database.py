@@ -63,7 +63,7 @@ async def init_db():
             )
         """)
         
-        # Taste profile — cached Claude-generated summary of user taste
+        # Taste profile — cached AI-generated summary of user taste
         await db.execute("""
             CREATE TABLE IF NOT EXISTS taste_profile (
                 user_id INTEGER PRIMARY KEY,
@@ -371,4 +371,3 @@ async def get_cache_stats(db: aiosqlite.Connection) -> dict:
         'total_cached_movies': total_movies
     }
 
-# Made with Bob
