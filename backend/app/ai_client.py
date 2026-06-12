@@ -134,7 +134,7 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
         try:
             response = await self.client.messages.create(
                 model=settings.ai_model_smart,
-                max_tokens=4096,
+                max_tokens=900,
                 system=[
                     {
                         "type": "text",
@@ -304,7 +304,7 @@ Rules:
 Pre-selected candidates:
 {movies_text}
 
-Pick ONE film from the list and write a 2–3 sentence paragraph explaining why THIS film is the perfect watch for this moment. Be specific, evocative, and cinematic. Reference mood, season, or the emotional resonance it carries.
+Pick ONE film from the list. If today's headlines are provided, consider how they set the emotional mood of the day — choose a film that either resonates with those themes or offers the perfect counterpoint. Write a 2–3 sentence paragraph explaining why THIS film is the right watch for tonight. Be specific, evocative, and cinematic.
 
 Respond in this exact format:
 FILM: [exact title from the list]
@@ -317,11 +317,10 @@ REASON: [2-3 sentence paragraph]"""
                 messages=[{"role": "user", "content": prompt}],
             )
             text = response.content[0].text.strip()
-            lines = text.split("\n")
-            film_line = next((l for l in lines if l.startswith("FILM:")), None)
-            reason_lines = [l for l in lines if l.startswith("REASON:")]
+            film_line = next((l for l in text.split("\n") if l.startswith("FILM:")), None)
             film = film_line.replace("FILM:", "").strip() if film_line else None
-            reason = reason_lines[0].replace("REASON:", "").strip() if reason_lines else text
+            reason_start = text.find("REASON:")
+            reason = text[reason_start + 7:].strip() if reason_start != -1 else text
             return film, reason
         except Exception as e:
             print(f"⚠️  Signal generation failed: {e}")

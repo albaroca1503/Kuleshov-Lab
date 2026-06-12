@@ -26,10 +26,16 @@ async def populate_cache(num_pages: int = 50):
     db = await aiosqlite.connect("data/kuleshov.db")
     
     try:
+        # Pre-load already-cached IDs so re-runs skip existing movies
+        async with db.execute("SELECT movie_id FROM movie_cache") as cursor:
+            cached_ids = {row[0] for row in await cursor.fetchall()}
+        print(f"📦 Already cached: {len(cached_ids)} movies")
+
         movies_added = 0
         movies_skipped = 0
-        seen_ids = set()
-        
+        pending = 0
+        seen_ids = set(cached_ids)
+
         # Fetch from multiple sources for diversity
         sources = [
             ('vote_average.desc', num_pages),      # Top rated
@@ -65,21 +71,19 @@ async def populate_cache(num_pages: int = 50):
                         seen_ids.add(movie_id)
                         
                         try:
-                            # Get full movie details
                             full_movie = tmdb.get_movie(movie_id)
-                            
-                            # Generate embedding
                             embedding = embeddings.generate_movie_embedding(full_movie)
-                            embedding_bytes = embedding.tobytes()
-                            
-                            # Save to cache
-                            await save_movie_to_cache(db, full_movie, embedding_bytes)
-                            
+                            await save_movie_to_cache(db, full_movie, embedding.tobytes(), commit=False)
                             movies_added += 1
-                            
+                            pending += 1
+
+                            if pending >= 100:
+                                await db.commit()
+                                pending = 0
+
                             if movies_added % 50 == 0:
                                 print(f"  ✅ Cached {movies_added} movies...")
-                            
+
                         except Exception as e:
                             print(f"  ⚠️  Error processing movie {movie_id}: {e}")
                             continue
@@ -88,6 +92,9 @@ async def populate_cache(num_pages: int = 50):
                     print(f"  ⚠️  Error fetching page {page}: {e}")
                     continue
         
+        if pending > 0:
+            await db.commit()
+
         # Print final stats
         stats = await get_cache_stats(db)
         print(f"\n✨ Cache population complete!")

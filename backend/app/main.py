@@ -2,7 +2,7 @@
 Kuleshov Lab - FastAPI Backend
 Main application entry point
 """
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import aiosqlite
@@ -124,18 +124,10 @@ async def recommend_by_vibe(
 async def mark_watched(
     movie_id: int,
     request: MarkWatchedRequest,
+    background_tasks: BackgroundTasks,
     db: aiosqlite.Connection = Depends(get_db)
 ):
-    """
-    Mark a movie as watched/liked/disliked
-    
-    Args:
-        movie_id: TMDB movie ID
-        request: Status, optional rating, and movie title
-        
-    Returns:
-        Success message
-    """
+    """Mark a movie as watched/liked/disliked"""
     try:
         movie_title = request.movie_title
         if not movie_title:
@@ -144,21 +136,26 @@ async def mark_watched(
                 movie_title = get_tmdb_client().get_movie(movie_id).get('title', f'Movie {movie_id}')
             except Exception:
                 movie_title = f'Movie {movie_id}'
-        
+
         await mark_movie_watched(
             db=db,
-            user_id=1,  # Single user for MVP
+            user_id=1,
             movie_id=movie_id,
             movie_title=movie_title,
             status=request.status,
             rating=request.rating
         )
-        
+
+        # Rebuild taste profile in background so it's ready for the next recommendation
+        if request.status in ("liked", "disliked"):
+            engine = get_recommendation_engine()
+            background_tasks.add_task(engine.refresh_taste_profile, user_id=1)
+
         return {
             "success": True,
             "message": f"Movie '{movie_title}' marked as {request.status}"
         }
-        
+
     except Exception as e:
         print(f"❌ Error marking movie: {e}")
         raise HTTPException(status_code=500, detail=str(e))

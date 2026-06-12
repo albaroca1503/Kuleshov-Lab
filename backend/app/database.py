@@ -182,10 +182,12 @@ async def get_embedding_cache(db: aiosqlite.Connection, movie_id: int) -> Option
     return None
 
 
-async def save_movie_to_cache(db: aiosqlite.Connection, movie_data: dict, embedding: bytes):
+async def save_movie_to_cache(
+    db: aiosqlite.Connection, movie_data: dict, embedding: bytes, commit: bool = True
+):
     """Save movie data and embedding to cache"""
     genres_json = json.dumps(movie_data.get('genres', []))
-    
+
     await db.execute("""
         INSERT OR REPLACE INTO movie_cache
         (movie_id, title, original_title, overview, release_date, genres,
@@ -206,7 +208,8 @@ async def save_movie_to_cache(db: aiosqlite.Connection, movie_data: dict, embedd
         movie_data.get('backdrop_path'),
         embedding
     ))
-    await db.commit()
+    if commit:
+        await db.commit()
 
 
 async def get_all_cached_movies(db: aiosqlite.Connection) -> list[dict]:
@@ -359,6 +362,26 @@ async def save_user_settings(
         (user_id, country_code, json.dumps(streaming_service_ids))
     )
     await db.commit()
+
+
+async def get_watched_and_feedback_ids(
+    db: aiosqlite.Connection, user_id: int = 1
+) -> tuple[set[int], list[int], list[int]]:
+    """Return (all_watched_ids, liked_ids, disliked_ids) in a single query."""
+    watched: set[int] = set()
+    liked: list[int] = []
+    disliked: list[int] = []
+    async with db.execute(
+        "SELECT movie_id, status FROM user_movies WHERE user_id = ?",
+        (user_id,)
+    ) as cursor:
+        async for row in cursor:
+            watched.add(row[0])
+            if row[1] == 'liked':
+                liked.append(row[0])
+            elif row[1] == 'disliked':
+                disliked.append(row[0])
+    return watched, liked, disliked
 
 
 async def get_cache_stats(db: aiosqlite.Connection) -> dict:

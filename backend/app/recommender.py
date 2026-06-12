@@ -1,8 +1,10 @@
 """
 Recommendation engine — vibe-based movie recommendations via ChromaDB vector search
 """
+import asyncio
 import numpy as np
 import aiosqlite
+from datetime import date
 from typing import Optional
 
 from app.embeddings import get_embedding_service
@@ -10,10 +12,13 @@ from app.tmdb import get_tmdb_client
 from app.ai_client import get_ai_client
 from app.vector_store import get_vector_store
 from app.database import (
-    get_watched_movies, get_user_stats, get_movies_by_status_pair,
-    get_taste_profile, save_taste_profile, get_liked_disliked_since,
+    get_user_stats, get_taste_profile, save_taste_profile,
+    get_liked_disliked_since, get_watched_and_feedback_ids,
 )
 from app.models import MovieResponse
+
+# Signal result cached per user per day — avoids re-running AI on every request
+_signal_cache: dict[int, tuple[dict, date]] = {}
 
 
 class RecommendationEngine:
@@ -50,17 +55,19 @@ class RecommendationEngine:
             print("⚠️  ChromaDB is empty. Run: python ingest_movies.py")
             return []
 
-        # 1. Expand vibe with AI, fall back to local rules
-        expanded = await self.ai_client.expand_vibe(vibe)
+        # 1. Expand vibe (AI) and fetch DB feedback in parallel
+        expand_task = asyncio.create_task(self.ai_client.expand_vibe(vibe))
+        db_task = asyncio.create_task(get_watched_and_feedback_ids(db, user_id))
+
+        expanded = await expand_task
         if expanded == vibe:
             expanded = self.embedding_service.expand_vibe(vibe)
         vibe_embedding = self.embedding_service.encode(expanded)
 
-        # 2. Adjust query with liked/disliked feedback (Rocchio algorithm)
-        liked_ids, disliked_ids = await get_movies_by_status_pair(db, user_id)
+        watched_ids, liked_ids, disliked_ids = await db_task
         query_embedding = self._apply_feedback(vibe_embedding, liked_ids, disliked_ids)
 
-        # 2. Query ChromaDB — fetch plenty of candidates to account for filtering
+        # 3. Query ChromaDB — fetch plenty of candidates to account for filtering
         fetch_n = min(max(limit * 20, 200), indexed)
         candidates = self.vector_store.search(
             query_embedding=query_embedding,
@@ -69,8 +76,7 @@ class RecommendationEngine:
         )
         print(f"🔍 ChromaDB returned {len(candidates)} candidates")
 
-        # 3. Exclude watched movies
-        watched_ids = await get_watched_movies(db, user_id)
+        # 4. Exclude watched movies
         candidates = [m for m in candidates if m["id"] not in watched_ids]
         print(f"📋 {len(candidates)} candidates after excluding {len(watched_ids)} watched")
 
@@ -89,11 +95,12 @@ class RecommendationEngine:
         if not candidates:
             return []
 
-        top_candidates = candidates[:25]
+        top_candidates = candidates[:12]
 
         if self.ai_client.is_available():
             user_profile = await get_user_stats(db, user_id)
-            taste_profile = await self._get_or_update_taste_profile(db, user_id)
+            cached = await get_taste_profile(db, user_id)
+            taste_profile = cached["profile_text"] if cached else None
             reranked = await self.ai_client.rerank_and_explain(
                 vibe=vibe,
                 candidates=top_candidates,
@@ -165,39 +172,85 @@ class RecommendationEngine:
                 return []
         return await self.recommend_by_vibe(db, vibe, user_id, limit)
 
+    async def refresh_taste_profile(self, user_id: int) -> None:
+        """Rebuild taste profile in the background (called after mark_watched)."""
+        async with aiosqlite.connect("data/kuleshov.db") as db:
+            await self._get_or_update_taste_profile(db, user_id)
+
     async def get_signal(
         self,
         db: aiosqlite.Connection,
         user_id: int = 1,
     ) -> Optional[dict]:
-        """Get the movie of the day — one curated recommendation."""
-        from datetime import datetime
-        month_name = datetime.now().strftime("%B")
-        context = f"A film perfect for a {month_name} evening"
+        """Get the movie of the day — curated using today's news + user taste."""
+        from app.news import fetch_headlines
+
+        # Return cached result if we already ran today
+        cached_result, cached_date = _signal_cache.get(user_id, (None, None))
+        if cached_result and cached_date == date.today():
+            print("📡 Signal served from cache")
+            return cached_result
+
+        indexed = self.vector_store.count()
+        if indexed == 0:
+            return None
 
         taste = await get_taste_profile(db, user_id)
         taste_text = taste["profile_text"] if taste and taste.get("profile_text") else None
-
         vibe = taste_text or "a cinematic masterpiece that rewards close attention"
-        candidates = await self.recommend_by_vibe(db, vibe, user_id, limit=10)
+
+        # Fetch news and search ChromaDB in parallel
+        headlines_task = asyncio.create_task(fetch_headlines(max_headlines=5))
+
+        watched_ids, liked_ids, disliked_ids = await get_watched_and_feedback_ids(db, user_id)
+        vibe_embedding = self.embedding_service.encode(vibe)
+        query_embedding = self._apply_feedback(vibe_embedding, liked_ids, disliked_ids)
+        raw = self.vector_store.search(query_embedding=query_embedding, n_results=min(50, indexed))
+        candidates = [m for m in raw if m["id"] not in watched_ids][:10]
+
+        headlines = await headlines_task
 
         if not candidates:
             return None
 
-        signal_reason = candidates[0].reason or "A film worth watching tonight."
+        context = self._build_signal_context(headlines)
+        signal_reason = "A film worth watching tonight."
 
         if self.ai_client.is_available():
             film_title, reason = await self.ai_client.generate_signal(
-                candidates=[c.model_dump() for c in candidates],
+                candidates=candidates,
                 taste_profile=taste_text,
                 context=context,
             )
-            if film_title:
-                for c in candidates:
-                    if c.title.lower() == film_title.lower():
-                        return {"movie": c, "signal_reason": reason or signal_reason, "context": context}
+            match = self._find_candidate_by_title(candidates, film_title) if film_title else None
+            if match:
+                result = {
+                    "movie": self._movie_to_response(match, match.get("score", 0)),
+                    "signal_reason": reason or signal_reason,
+                    "context": context,
+                }
+                _signal_cache[user_id] = (result, date.today())
+                return result
 
-        return {"movie": candidates[0], "signal_reason": signal_reason, "context": context}
+        result = {
+            "movie": self._movie_to_response(candidates[0], candidates[0].get("score", 0)),
+            "signal_reason": signal_reason,
+            "context": context,
+        }
+        _signal_cache[user_id] = (result, date.today())
+        return result
+
+    @staticmethod
+    def _build_signal_context(headlines: list[str]) -> str:
+        from datetime import datetime
+        if headlines:
+            print(f"📰 Signal context: {len(headlines)} headlines")
+            return "Today's headlines:\n" + "\n".join(f"- {h}" for h in headlines)
+        return f"A film perfect for a {datetime.now().strftime('%B')} evening"
+
+    def _find_candidate_by_title(self, candidates: list[dict], title: str) -> Optional[dict]:
+        title_lower = title.lower()
+        return next((c for c in candidates if c["title"].lower() == title_lower), None)
 
     def _apply_feedback(
         self,

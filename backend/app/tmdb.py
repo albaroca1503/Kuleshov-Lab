@@ -25,7 +25,7 @@ class TMDBClient:
         params['api_key'] = self.api_key
         
         url = f"{BASE_URL}{endpoint}"
-        response = self.session.get(url, params=params)
+        response = self.session.get(url, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
     

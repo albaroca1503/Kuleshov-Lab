@@ -12,6 +12,7 @@ import argparse
 import time
 import sys
 import os
+import requests
 
 # Allow running from backend/ directory
 sys.path.insert(0, os.path.dirname(__file__))
@@ -28,8 +29,29 @@ BATCH_SIZE = 50  # Movies per ChromaDB upsert batch
 RATE_LIMIT_DELAY = 0.26  # TMDB allows ~4 req/sec on free tier
 
 
+def _fetch_with_retry(tmdb, movie_id: int, max_attempts: int = 3) -> dict | None:
+    """Fetch movie details, retrying with backoff on 429 rate-limit errors."""
+    for attempt in range(max_attempts):
+        try:
+            movie = tmdb.get_movie_with_details(movie_id)
+            time.sleep(RATE_LIMIT_DELAY)
+            return movie
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 429:
+                wait = 5 * (attempt + 1)
+                print(f"  ⏳ Rate limited, retrying in {wait}s... ({attempt + 1}/{max_attempts})")
+                time.sleep(wait)
+            else:
+                print(f"  ⚠️  HTTP error fetching movie {movie_id}: {e}")
+                return None
+        except Exception as e:
+            print(f"  ⚠️  Error fetching movie {movie_id}: {e}")
+            return None
+    print(f"  ❌ Gave up on movie {movie_id} after {max_attempts} attempts")
+    return None
+
+
 def fetch_and_index(pages_per_source: int, skip_existing: bool) -> None:
-    settings = get_settings()
     tmdb = get_tmdb_client()
     embedder = get_embedding_service()
     store = get_vector_store()
@@ -67,6 +89,7 @@ def fetch_and_index(pages_per_source: int, skip_existing: bool) -> None:
 
             try:
                 response = tmdb.discover_movies(**params)
+                time.sleep(RATE_LIMIT_DELAY)
             except Exception as e:
                 print(f"  ⚠️  Error fetching page {page}: {e}")
                 time.sleep(1)
@@ -84,13 +107,9 @@ def fetch_and_index(pages_per_source: int, skip_existing: bool) -> None:
                     total_skipped += 1
                     continue
 
-                try:
-                    movie = tmdb.get_movie_with_details(movie_id)
-                    time.sleep(RATE_LIMIT_DELAY)
-                except Exception as e:
-                    print(f"  ⚠️  Error fetching movie {movie_id}: {e}")
+                movie = _fetch_with_retry(tmdb, movie_id)
+                if movie is None:
                     total_errors += 1
-                    time.sleep(1)
                     continue
 
                 text = embedder.create_movie_text(movie)
