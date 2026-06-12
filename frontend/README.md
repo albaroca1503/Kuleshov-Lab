@@ -1,83 +1,33 @@
-# Kuleshov Lab - Cinematic Curator
+# Kuleshov Lab — Frontend
 
-<div align="center">
-  <h3>🎬 A sophisticated platform for discovering and curating cinematic experiences</h3>
-</div>
+React + TypeScript frontend for the Kuleshov Lab cinematic recommendation engine.
 
-## 🌟 Features
+## Quick start
 
-- **Engine**: Discover films through mood-based search and cinematic vibes
-- **Vault**: Your personal curated collection of films with detailed metadata
-- **Feed**: Swipe-style interface for discovering new films
-- **Cinematic Design**: Film noir-inspired aesthetic with grain overlay and elegant typography
+```bash
+npm install
+npm run dev
+```
 
-## 🚀 Quick Start
+App runs at [http://localhost:3001](http://localhost:3001). Requires the backend running on port 8000.
 
-### Prerequisites
-- Node.js (v20.19.0 or higher recommended)
-- npm or yarn
+## Views
 
-### Installation
+- **Engine** — vibe-based film search
+- **Vault** — personal film archive with stats
+- **Signal** — one curated film pick per day
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Available scripts
 
-2. Set up environment variables (optional):
-   Create a `.env.local` file and add your API keys if needed:
-   ```
-   GEMINI_API_KEY=your_api_key_here
-   ```
+- `npm run dev` — development server
+- `npm run build` — production build
+- `npm run preview` — preview production build
+- `npm run lint` — TypeScript type check
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
+## Tech stack
 
-4. Open your browser and navigate to:
-   ```
-   http://localhost:3000
-   ```
+React 19 · TypeScript · Vite · Tailwind CSS 4 · Motion · Lucide React
 
-## 📦 Available Scripts
+## License
 
-- `npm run dev` - Start development server on port 3000
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run clean` - Remove build artifacts
-- `npm run lint` - Run TypeScript type checking
-
-## 🎨 Tech Stack
-
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS 4** - Styling
-- **Motion** - Animations
-- **Lucide React** - Icons
-
-## 🎭 Design Philosophy
-
-Kuleshov Lab is inspired by the cinematic theory of Lev Kuleshov and the aesthetic of classic film noir. The interface features:
-
-- Monochromatic color palette with accent colors
-- Film grain overlay for authentic texture
-- Typography inspired by classic cinema
-- Smooth transitions and animations
-- Metadata strips reminiscent of film leader
-
-## 📄 License
-
-See [LICENSE](../LICENSE) file for details.
-
-## 🤝 Contributing
-
-This is a personal project, but suggestions and feedback are welcome!
-
----
-
-<div align="center">
-  <p><i>"The essence of cinema is editing. It's the combination of what can be extraordinary images of people during emotional moments, or images in a general sense, put together in a kind of alchemy."</i></p>
-  <p>— Francis Ford Coppola</p>
-</div>
+See [LICENSE](../LICENSE).

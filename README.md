@@ -62,7 +62,9 @@ python ingest_movies.py
 # python ingest_movies.py --pages 100  # ~8,000 movies
 ```
 
-This downloads movie data from TMDB and generates local embeddings. Only needed once.
+> **Note:** on the very first run, Sentence-Transformers will download a ~500 MB language model. This only happens once — subsequent runs use the cached model.
+
+Run this again any time you want to expand the catalogue.
 
 ### 3. Frontend
 

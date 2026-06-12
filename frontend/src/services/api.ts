@@ -42,7 +42,7 @@ export interface UserStats {
   total_watched: number;
   total_liked: number;
   total_disliked: number;
-  favorite_genres: string[];
+  favorite_genres: [string, number][];
   watch_time_hours: number;
 }
 
