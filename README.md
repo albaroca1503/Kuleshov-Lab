@@ -29,7 +29,7 @@ graph TB
         API[API Layer]
         REC[Recommendation Engine]
         EMB["Embedding Service\n(all-mpnet-base-v2, local)"]
-        AIC["AI Client\n(Claude Haiku / Sonnet)"]
+        AIC["AI Client\n(litellm — fast / smart model)"]
         NEWS["News Service\n(BBC RSS, cached daily)"]
     end
 
@@ -40,7 +40,7 @@ graph TB
 
     subgraph External["External"]
         TMDB[TMDB API]
-        ANTHROPIC["Anthropic API\n(Claude)"]
+        AI_PROVIDER["AI Provider\n(litellm-compatible)"]
         RSS[BBC News RSS]
     end
 
@@ -51,7 +51,7 @@ graph TB
     REC --> NEWS
     REC <--> CHROMA
     REC <--> SQLITE
-    AIC --> ANTHROPIC
+    AIC --> AI_PROVIDER
     NEWS --> RSS
     API --> TMDB
 ```
@@ -68,34 +68,34 @@ Type anything: *"paranoid surveillance thriller, cold and fractured"* or *"melan
 sequenceDiagram
     participant User
     participant API
-    participant Haiku as Claude Haiku
+    participant Fast as AI fast model
     participant DB as SQLite
     participant Emb as Embeddings (local)
     participant VDB as ChromaDB
-    participant Sonnet as Claude Sonnet
+    participant Smart as AI smart model
 
     User->>API: POST /api/recommend/vibe
     note over API: expand_vibe + fetch DB run in parallel
     par
-        API->>Haiku: expand vibe into rich cinematic description
+        API->>Fast: expand vibe into rich cinematic description
         API->>DB: fetch watched · liked · disliked IDs
     end
-    Haiku-->>API: expanded description
+    Fast-->>API: expanded description
     Emb->>Emb: encode(expanded text) → 768-dim vector
     Emb->>Emb: Rocchio shift toward liked / away from disliked
     API->>VDB: cosine similarity search → top 200 candidates
     VDB-->>API: ranked candidates
     API->>API: remove watched films + films without poster
-    API->>Sonnet: rerank_and_explain(top 12 candidates)
-    Sonnet-->>API: curated list with reasons + rank-based scores
+    API->>Smart: rerank_and_explain(top 12 candidates)
+    Smart-->>API: curated list with reasons + rank-based scores
     API-->>User: up to 10 films — curated first, ChromaDB fill after
 ```
 
-**Scoring:** the match percentage shown on each card comes from Claude's re-ranking, not raw vector similarity. Rank 1 → ~100%, rank 12 → ~60%. Films Claude didn't curate (shown after) keep their original ChromaDB cosine score (~75–82%) — it's normal for good matches to cluster in that range.
+**Scoring:** the match percentage shown on each card comes from the smart model's re-ranking, not raw vector similarity. Rank 1 → ~100%, rank 12 → ~60%. Films the smart model didn't curate (shown after) keep their original ChromaDB cosine score (~75–82%) — it's normal for good matches to cluster in that range.
 
 **Why two models?**
-- Haiku (fast, cheap) expands the vibe query before embedding — a richer text produces better vector matches.
-- Sonnet (smarter) re-ranks the top 12 candidates with cultural and contextual understanding, then writes the one-sentence reason for each film.
+- **Fast model** (`AI_MODEL_FAST`) expands the vibe query before embedding — a richer text produces better vector matches. Keep it cheap and quick.
+- **Smart model** (`AI_MODEL_SMART`) re-ranks the top 12 candidates with cultural and contextual understanding, then writes the one-sentence reason for each film.
 
 ---
 
@@ -111,7 +111,7 @@ sequenceDiagram
     participant DB as SQLite
     participant RSS as BBC News RSS
     participant VDB as ChromaDB
-    participant Haiku as Claude Haiku
+    participant Fast as AI fast model
 
     User->>API: GET /api/recommend/signal
     API->>Cache: already generated today?
@@ -128,14 +128,14 @@ sequenceDiagram
         API->>VDB: search with taste profile vector (Rocchio adjusted)
         VDB-->>API: top 50 candidates
         API->>API: remove watched + no-poster → top 10
-        API->>Haiku: generate_signal(candidates + headlines + taste profile)
-        Haiku-->>API: chosen film + 2–3 sentence reason tied to today's news
+        API->>Fast: generate_signal(candidates + headlines + taste profile)
+        Fast-->>API: chosen film + 2–3 sentence reason tied to today's news
         API->>Cache: store for today
         API-->>User: curated pick with editorial write-up
     end
 ```
 
-The Signal endpoint makes **one AI call** (Haiku). It does not expand or re-rank — the news context + taste profile are rich enough to guide the pick directly. If the news feed is unavailable, it falls back gracefully to a seasonal context.
+The Signal endpoint makes **one AI call** (fast model). It does not expand or re-rank — the news context + taste profile are rich enough to guide the pick directly. If the news feed is unavailable, it falls back gracefully to a seasonal context.
 
 ---
 
@@ -144,7 +144,7 @@ The Signal endpoint makes **one AI call** (Haiku). It does not expand or re-rank
 Every liked or disliked film does two things:
 
 1. **Rocchio adjustment** — the query vector in future searches shifts toward liked films and away from disliked ones. No AI needed; happens on every request.
-2. **Taste profile rebuild** — after every 5 new liked/disliked films, Claude Sonnet writes a 3–4 sentence prose description of your cinematic sensibility. This profile is used by both the Engine re-ranker and the Signal to personalise picks. The rebuild happens in the **background** after `mark_watched`, so it never adds latency to recommendations.
+2. **Taste profile rebuild** — after every 5 new liked/disliked films, the smart model writes a 3–4 sentence prose description of your cinematic sensibility. This profile is used by both the Engine re-ranker and the Signal to personalise picks. The rebuild happens in the **background** after `mark_watched`, so it never adds latency to recommendations.
 
 ---
 
@@ -158,8 +158,8 @@ Every liked or disliked film does two things:
 | Embeddings | Sentence-Transformers `all-mpnet-base-v2` (local, no API cost) |
 | User data | SQLite via aiosqlite |
 | Movie metadata | TMDB API |
-| AI re-ranking | Any litellm-supported model — default: Claude Sonnet (optional) |
-| Vibe expansion | Any litellm-supported model — default: Claude Haiku (optional) |
+| AI re-ranking | Any litellm-supported model — set `AI_MODEL_SMART` in `.env` (optional) |
+| Vibe expansion | Any litellm-supported model — set `AI_MODEL_FAST` in `.env` (optional) |
 | News headlines | BBC News RSS (no API key needed) |
 
 The app works fully without an AI API key — vibe expansion falls back to a local keyword-expansion dictionary, and results are returned in raw ChromaDB order without reasons.
@@ -183,11 +183,22 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` (copy from `.env.example` — all values are required unless marked optional):
 
 ```env
 TMDB_API_KEY=your_tmdb_key
-AI_API_KEY=your_ai_api_key   # optional
+
+AI_API_KEY=your_ai_api_key       # optional
+AI_MODEL_FAST=gpt-4o-mini        # fast model — vibe expansion & Signal pick
+AI_MODEL_SMART=gpt-4o            # smart model — re-ranking & taste profile
+
+DATABASE_URL=sqlite+aiosqlite:///./data/kuleshov.db
+EMBEDDING_MODEL=all-mpnet-base-v2
+
+HOST=0.0.0.0
+PORT=8000
+ENVIRONMENT=development
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 2. Populate the vector store

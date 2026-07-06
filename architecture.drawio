@@ -1,0 +1,280 @@
+<mxfile host="app.diagrams.net" modified="2025-01-01T00:00:00.000Z" agent="Bob" version="21.0.0" type="device">
+  <diagram name="Kuleshov Lab — Architecture" id="kuleshov-arch">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  TITLE                                     -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:24px;font-family:Georgia,serif;letter-spacing:2px;color:#e14868;&quot;&gt;KULESHOV LAB&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:12px;color:#a89c8e;font-style:italic;&quot;&gt;AI-powered cinematic curation platform — System Architecture&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="490" y="20" width="674" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  LAYER A: FRONTEND (React)                 -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="grp-frontend" value="&lt;b&gt;FRONTEND&lt;/b&gt;  ·  React 19 · TypeScript · Vite · Tailwind CSS v4 · Framer Motion" style="swimlane;startSize=30;fillColor=#221e1b;strokeColor=#e14868;fontSize=12;fontColor=#e14868;swimlaneLine=1;rounded=1;arcSize=4;labelBackgroundColor=none;fontStyle=1;strokeWidth=2;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="110" width="1420" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- Engine -->
+        <mxCell id="fe-engine" value="&lt;b&gt;Engine&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;Vibe Search&lt;br/&gt;POST /api/recommend/vibe&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e14868;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-frontend">
+          <mxGeometry x="70" y="55" width="180" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Vault -->
+        <mxCell id="fe-vault" value="&lt;b&gt;Vault&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;Watched · Liked · Disliked&lt;br/&gt;POST /api/movies/{id}/watched&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e14868;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-frontend">
+          <mxGeometry x="610" y="55" width="200" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Signal -->
+        <mxCell id="fe-signal" value="&lt;b&gt;Signal&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;Today's Pick&lt;br/&gt;GET /api/recommend/signal&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e14868;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-frontend">
+          <mxGeometry x="1150" y="55" width="190" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  LAYER B: BACKEND (FastAPI)                -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="grp-backend" value="&lt;b&gt;BACKEND&lt;/b&gt;  ·  FastAPI · Python 3.12 · Uvicorn" style="swimlane;startSize=30;fillColor=#221e1b;strokeColor=#e7b673;fontSize=12;fontColor=#e7b673;swimlaneLine=1;rounded=1;arcSize=4;labelBackgroundColor=none;fontStyle=1;strokeWidth=2;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="310" width="1420" height="270" as="geometry" />
+        </mxCell>
+
+        <!-- API Layer -->
+        <mxCell id="be-api" value="&lt;b&gt;API Layer&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;FastAPI Endpoints&lt;br/&gt;CORS · Lifespan · Depends&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="580" y="50" width="260" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Recommendation Engine -->
+        <mxCell id="be-rec" value="&lt;b&gt;Recommendation Engine&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;recommender.py&lt;br/&gt;Vibe · Vault · Signal · Rocchio&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="580" y="160" width="260" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Embedding Service -->
+        <mxCell id="be-emb" value="&lt;b&gt;Embedding Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;embeddings.py&lt;br/&gt;all-mpnet-base-v2 (local)&lt;br/&gt;768-dim vectors&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="120" y="160" width="200" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- AI Client -->
+        <mxCell id="be-ai" value="&lt;b&gt;AI Client&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;ai_client.py&lt;br/&gt;fast · smart model routing&lt;br/&gt;Fallback: keyword expand&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="370" y="160" width="180" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- TMDB Client -->
+        <mxCell id="be-tmdb" value="&lt;b&gt;TMDB Client&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;tmdb.py&lt;br/&gt;Posters · Cast · Streaming&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="890" y="160" width="190" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- News Service -->
+        <mxCell id="be-news" value="&lt;b&gt;News Service&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;news.py&lt;br/&gt;BBC RSS · cached daily&lt;br/&gt;Seasonal fallback&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-backend">
+          <mxGeometry x="1130" y="160" width="190" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  LAYER C: STORAGE                          -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="grp-storage" value="&lt;b&gt;STORAGE&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#221e1b;strokeColor=#b98a4e;fontSize=12;fontColor=#e7b673;swimlaneLine=1;rounded=1;arcSize=4;labelBackgroundColor=none;fontStyle=1;strokeWidth=2;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="650" width="680" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- ChromaDB -->
+        <mxCell id="st-chroma" value="&lt;b&gt;ChromaDB&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;~8 000 films&lt;br/&gt;HNSW · cosine similarity&lt;br/&gt;vector_store.py&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;strokeWidth=1.5;shadow=1;" vertex="1" parent="grp-storage">
+          <mxGeometry x="90" y="45" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- SQLite -->
+        <mxCell id="st-sqlite" value="&lt;b&gt;SQLite (aiosqlite)&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;vault · settings · taste profile&lt;br/&gt;watched · liked · disliked&lt;br/&gt;database.py&lt;/font&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#2c2723;strokeColor=#e7b673;fontColor=#ede7e0;fontSize=11;strokeWidth=1.5;shadow=1;" vertex="1" parent="grp-storage">
+          <mxGeometry x="390" y="45" width="220" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  LAYER D: EXTERNAL SERVICES                -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="grp-external" value="&lt;b&gt;EXTERNAL SERVICES&lt;/b&gt;" style="swimlane;startSize=30;fillColor=#221e1b;strokeColor=#9c3049;fontSize=12;fontColor=#d98ba0;swimlaneLine=1;rounded=1;arcSize=4;labelBackgroundColor=none;fontStyle=1;strokeWidth=2;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="650" width="680" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- TMDB API -->
+        <mxCell id="ext-tmdb" value="&lt;b&gt;TMDB API&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;Movie metadata · Posters&lt;br/&gt;Streaming providers&lt;br/&gt;api.themoviedb.org&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#9c3049;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-external">
+          <mxGeometry x="50" y="45" width="180" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- AI Provider API -->
+        <mxCell id="ext-claude" value="&lt;b&gt;AI Provider API&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;AI_MODEL_FAST — vibe expand&lt;br/&gt;AI_MODEL_SMART — rerank&lt;br/&gt;litellm-compatible&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#9c3049;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-external">
+          <mxGeometry x="260" y="45" width="190" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- BBC RSS -->
+        <mxCell id="ext-rss" value="&lt;b&gt;BBC News RSS&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#a89c8e&quot;&gt;Top 5 headlines daily&lt;br/&gt;No API key required&lt;br/&gt;feeds.bbci.co.uk&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2c2723;strokeColor=#9c3049;fontColor=#ede7e0;fontSize=11;arcSize=10;shadow=1;strokeWidth=1.5;" vertex="1" parent="grp-external">
+          <mxGeometry x="475" y="45" width="175" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  EDGES — Frontend → Backend               -->
+        <!-- ══════════════════════════════════════════ -->
+
+        <!-- Engine → API -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;strokeColor=#e14868;strokeWidth=2;endArrow=block;endFill=1;startArrow=none;" edge="1" source="fe-engine" target="be-api" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;POST /vibe&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e1">
+          <mxGeometry x="-0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Vault → API -->
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#e14868;strokeWidth=2;endArrow=block;endFill=1;" edge="1" source="fe-vault" target="be-api" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;POST /watched&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e2">
+          <mxGeometry x="0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Signal → API -->
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;strokeColor=#e14868;strokeWidth=2;endArrow=block;endFill=1;" edge="1" source="fe-signal" target="be-api" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;GET /signal&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e3">
+          <mxGeometry x="0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  EDGES — API → Internal Services           -->
+        <!-- ══════════════════════════════════════════ -->
+
+        <!-- API → Rec Engine -->
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#e7b673;strokeWidth=2;endArrow=block;endFill=1;" edge="1" source="be-api" target="be-rec" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Rec → Embedding -->
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#e7b673;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-rec" target="be-emb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;encode + Rocchio&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e5">
+          <mxGeometry x="-0.15" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Rec → AI Client -->
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#e7b673;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-rec" target="be-ai" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;expand · rerank&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e6">
+          <mxGeometry x="-0.2" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- Rec → TMDB Client -->
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#e7b673;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-rec" target="be-tmdb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Rec → News -->
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#e7b673;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-rec" target="be-news" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;headlines&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e8">
+          <mxGeometry x="0.1" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  EDGES — Backend → Storage                 -->
+        <!-- ══════════════════════════════════════════ -->
+
+        <!-- Rec ↔ ChromaDB -->
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#b98a4e;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="be-rec" target="st-chroma" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;cosine search&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e9">
+          <mxGeometry x="-0.2" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- API/Rec ↔ SQLite -->
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#b98a4e;strokeWidth=2;endArrow=block;endFill=1;startArrow=block;startFill=1;" edge="1" source="be-rec" target="st-sqlite" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10-lbl" value="&lt;font style=&quot;font-size:9px&quot; color=&quot;#ede7e0&quot;&gt;vault · profile&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="e10">
+          <mxGeometry x="0.2" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  EDGES — Backend → External                -->
+        <!-- ══════════════════════════════════════════ -->
+
+        <!-- TMDB Client → TMDB API -->
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#9c3049;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-tmdb" target="ext-tmdb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- AI Client → Anthropic -->
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#9c3049;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-ai" target="ext-claude" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- News → BBC RSS -->
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#9c3049;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="be-news" target="ext-rss" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  ANNOTATION BOX — Taste Profile Loop       -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="ann-taste" value="&lt;b style=&quot;color:#e7b673;&quot;&gt;Taste Profile Loop&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#c4b8a8&quot;&gt;Every 5 liked/disliked films →&lt;br/&gt;smart model rebuilds a 3–4 sentence&lt;br/&gt;prose profile &lt;i&gt;in the background&lt;/i&gt;&lt;/font&gt;" style="text;html=1;strokeColor=#b98a4e;fillColor=#2c2723;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;fontSize=10;rounded=1;arcSize=6;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="450" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow pointing to SQLite -->
+        <mxCell id="e-ann" style="edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#b98a4e;strokeWidth=1;endArrow=open;endFill=0;dashed=1;" edge="1" source="ann-taste" target="st-sqlite" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  ANNOTATION BOX — Rocchio Vector Shift     -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="ann-rocchio" value="&lt;b style=&quot;color:#e14868;&quot;&gt;Rocchio Adjustment&lt;/b&gt;&lt;br/&gt;&lt;font style=&quot;font-size:10px&quot; color=&quot;#c4b8a8&quot;&gt;Query vector shifts toward liked&lt;br/&gt;films, away from disliked ones.&lt;br/&gt;Zero AI cost — runs every request.&lt;/font&gt;" style="text;html=1;strokeColor=#9c3049;fillColor=#2c2723;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;fontSize=10;rounded=1;arcSize=6;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow pointing to embedding -->
+        <mxCell id="e-roc" style="edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#9c3049;strokeWidth=1;endArrow=open;endFill=0;dashed=1;" edge="1" source="ann-rocchio" target="be-emb" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!--  LEGEND                                    -->
+        <!-- ══════════════════════════════════════════ -->
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;" style="swimlane;startSize=22;fillColor=#221e1b;strokeColor=#453e37;fontSize=11;fontColor=#ede7e0;rounded=1;arcSize=4;strokeWidth=1.5;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="860" width="480" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg1" value="" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#e14868;strokeWidth=2;" edge="1" parent="legend">
+          <mxGeometry x="20" y="40" width="70" height="20" as="geometry" relative="0"><Array as="points"/><mxPoint x="20" y="50" as="sourcePoint"/><mxPoint x="90" y="50" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="leg1-lbl" value="HTTP Request" style="text;html=1;fontSize=10;fontColor=#ede7e0;" vertex="1" parent="legend">
+          <mxGeometry x="95" y="40" width="90" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg2" value="" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#e7b673;strokeWidth=2;" edge="1" parent="legend">
+          <mxGeometry x="20" y="60" width="70" height="20" as="geometry" relative="0"><Array as="points"/><mxPoint x="20" y="70" as="sourcePoint"/><mxPoint x="90" y="70" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="leg2-lbl" value="Internal call" style="text;html=1;fontSize=10;fontColor=#ede7e0;" vertex="1" parent="legend">
+          <mxGeometry x="95" y="60" width="90" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg3" value="" style="endArrow=block;endFill=1;startArrow=block;startFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#b98a4e;strokeWidth=2;" edge="1" parent="legend">
+          <mxGeometry x="200" y="40" width="70" height="20" as="geometry" relative="0"><Array as="points"/><mxPoint x="200" y="50" as="sourcePoint"/><mxPoint x="270" y="50" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="leg3-lbl" value="Read/Write" style="text;html=1;fontSize=10;fontColor=#ede7e0;" vertex="1" parent="legend">
+          <mxGeometry x="275" y="40" width="90" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg4" value="" style="endArrow=block;endFill=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#9c3049;strokeWidth=1.5;" edge="1" parent="legend">
+          <mxGeometry x="200" y="60" width="70" height="20" as="geometry" relative="0"><Array as="points"/><mxPoint x="200" y="70" as="sourcePoint"/><mxPoint x="270" y="70" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="leg4-lbl" value="External API call" style="text;html=1;fontSize=10;fontColor=#ede7e0;" vertex="1" parent="legend">
+          <mxGeometry x="275" y="60" width="100" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -21,11 +21,13 @@ class AIClient:
 
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.ai_api_key
-        self.available = bool(self.api_key)
+        self.model_fast = settings.ai_model_fast
+        self.model_smart = settings.ai_model_smart
+        self.available = bool(self.api_key and self.model_fast and self.model_smart)
         if not self.available:
-            print("⚠️  AI API key not configured - re-ranking disabled")
+            print("⚠️  AI not fully configured (AI_API_KEY / AI_MODEL_FAST / AI_MODEL_SMART) - re-ranking disabled")
         else:
-            print("✅ AI client initialized")
+            print(f"✅ AI client initialized — fast={self.model_fast}  smart={self.model_smart}")
 
     def is_available(self) -> bool:
         return self.available
@@ -55,7 +57,7 @@ Return only the expanded description, no explanation or preamble."""
 
         try:
             expanded = await self._complete(
-                model=settings.ai_model_fast,
+                model=self.model_fast,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=200,
             )
@@ -109,7 +111,7 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
 
         try:
             return await self._complete(
-                model=settings.ai_model_smart,
+                model=self.model_smart,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=300,
             )
@@ -145,7 +147,7 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
         
         try:
             result_text = await self._complete(
-                model=settings.ai_model_smart,
+                model=self.model_smart,
                 messages=[
                     {
                         "role": "system",
@@ -320,7 +322,7 @@ REASON: [2-3 sentence paragraph]"""
 
         try:
             text = await self._complete(
-                model=settings.ai_model_fast,
+                model=self.model_fast,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=300,
             )

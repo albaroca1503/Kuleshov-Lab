@@ -12,23 +12,24 @@ class Settings(BaseSettings):
     tmdb_api_key: str
     ai_api_key: str | None = None
 
-    # AI models (override to use a different provider/model)
-    ai_model_fast: str = "claude-haiku-4-5-20251001"
-    ai_model_smart: str = "claude-sonnet-4-6"
+    # AI models — must be set in .env (any litellm-compatible model string)
+    # e.g. "claude-haiku-4-5-20251001", "gpt-4o-mini", "gemini/gemini-2.0-flash", "ollama/llama3"
+    ai_model_fast: str | None = None
+    ai_model_smart: str | None = None
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./data/movies.db"
+    database_url: str
 
     # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
-    environment: str = "development"
+    host: str
+    port: int
+    environment: str
 
     # CORS
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str
 
     # Embeddings
-    embedding_model: str = "all-mpnet-base-v2"
+    embedding_model: str
 
 
 @lru_cache()

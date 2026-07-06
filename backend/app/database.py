@@ -10,13 +10,21 @@ from app.config import get_settings
 settings = get_settings()
 
 
+def _db_path() -> Path:
+    """Extract file path from DATABASE_URL (strips the aiosqlite driver prefix)."""
+    # e.g. "sqlite+aiosqlite:///./data/kuleshov.db" → "./data/kuleshov.db"
+    url = settings.database_url
+    path_str = url.split("///", 1)[-1]
+    return Path(path_str)
+
+
 async def init_db():
     """
     Initialize database with required tables
     
     Note: We only store user data locally. Movie data comes from TMDB API.
     """
-    db_path = Path("data/kuleshov.db")
+    db_path = _db_path()
     db_path.parent.mkdir(exist_ok=True)
     
     async with aiosqlite.connect(db_path) as db:
@@ -94,7 +102,7 @@ async def init_db():
 
 async def get_db():
     """Get database connection"""
-    db = await aiosqlite.connect("data/kuleshov.db")
+    db = await aiosqlite.connect(_db_path())
     db.row_factory = aiosqlite.Row
     try:
         yield db
