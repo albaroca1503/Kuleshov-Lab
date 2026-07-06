@@ -76,24 +76,7 @@ class RecommendationEngine:
         )
         print(f"🔍 ChromaDB returned {len(candidates)} candidates")
 
-        # 4. Exclude watched movies and movies without a poster (look broken in the UI)
-        candidates = [
-            m for m in candidates
-            if m["id"] not in watched_ids and m.get("poster_path")
-        ]
-        print(f"📋 {len(candidates)} candidates after filtering")
-
-        # 4. Genre filter (post-query, since ChromaDB can't filter on CSV metadata)
-        if filters and filters.get("genres"):
-            required = set(filters["genres"])
-            genre_filtered = []
-            for m in candidates:
-                # genres are stored as list[str] after the vector_store.search() call
-                tmdb_genre_ids = set(m.get("genres", []))
-                if tmdb_genre_ids & required:
-                    genre_filtered.append(m)
-            candidates = genre_filtered
-            print(f"🎭 {len(candidates)} candidates after genre filter")
+        candidates = self._apply_post_filters(candidates, watched_ids, filters)
 
         if not candidates:
             return []
@@ -241,6 +224,31 @@ class RecommendationEngine:
             "context": context,
         }
         _signal_cache[user_id] = (result, date.today())
+        return result
+
+    @staticmethod
+    def _apply_post_filters(
+        candidates: list[dict],
+        watched_ids: set[int],
+        filters: Optional[dict],
+    ) -> list[dict]:
+        """Remove watched films, no-poster films, and apply streaming/genre filters."""
+        result = [m for m in candidates if m["id"] not in watched_ids and m.get("poster_path")]
+        print(f"📋 {len(result)} candidates after watched/poster filter")
+
+        if filters and filters.get("streaming_service_ids"):
+            required = set(filters["streaming_service_ids"])
+            result = [
+                m for m in result
+                if required & {int(p) for p in m.get("streaming_provider_ids", "").split(",") if p}
+            ]
+            print(f"📺 {len(result)} candidates after streaming filter")
+
+        if filters and filters.get("genres"):
+            required_genres = set(filters["genres"])
+            result = [m for m in result if set(m.get("genres", [])) & required_genres]
+            print(f"🎭 {len(result)} candidates after genre filter")
+
         return result
 
     @staticmethod

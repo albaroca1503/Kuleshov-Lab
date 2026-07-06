@@ -44,8 +44,8 @@ class TMDBClient:
         return self._get(f"/movie/{movie_id}", params)
     
     def get_movie_with_details(self, movie_id: int) -> dict:
-        """Get movie with credits and keywords included"""
-        return self.get_movie(movie_id, append_to_response='credits,keywords')
+        """Get movie with credits, keywords and streaming providers included"""
+        return self.get_movie(movie_id, append_to_response='credits,keywords,watch/providers')
     
     def search_movies(self, query: str, page: int = 1) -> dict:
         """Search movies by query"""

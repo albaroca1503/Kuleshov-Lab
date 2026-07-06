@@ -14,8 +14,8 @@ requests==2.32.3
 sentence-transformers==3.3.1
 numpy==1.26.4
 
-# Claude AI (FASE 3)
-anthropic==0.39.0
+# AI (provider-agnostic — Anthropic, OpenAI, Gemini, Ollama, etc.)
+litellm==1.55.4
 
 # Vector database
 chromadb>=1.0.0

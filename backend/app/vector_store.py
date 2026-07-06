@@ -132,6 +132,7 @@ class MovieVectorStore:
                 "genres": genres,
                 "poster_path": metadata.get("poster_path", ""),
                 "backdrop_path": metadata.get("backdrop_path", ""),
+                "streaming_provider_ids": metadata.get("streaming_provider_ids", ""),
                 "score": score,
             })
 
@@ -149,6 +150,14 @@ class MovieVectorStore:
         release_date = movie.get("release_date", "") or ""
         year = int(release_date[:4]) if len(release_date) >= 4 else 0
 
+        # Collect all flatrate provider IDs across all countries
+        provider_ids: set[int] = set()
+        for country_data in movie.get("watch/providers", {}).get("results", {}).values():
+            for p in country_data.get("flatrate", []):
+                pid = p.get("provider_id")
+                if pid:
+                    provider_ids.add(int(pid))
+
         return {
             "title": movie.get("title", "") or "",
             "original_title": movie.get("original_title", "") or "",
@@ -161,6 +170,7 @@ class MovieVectorStore:
             "poster_path": movie.get("poster_path", "") or "",
             "backdrop_path": movie.get("backdrop_path", "") or "",
             "genres": ",".join(genre_names),
+            "streaming_provider_ids": ",".join(str(p) for p in sorted(provider_ids)),
         }
 
     @staticmethod

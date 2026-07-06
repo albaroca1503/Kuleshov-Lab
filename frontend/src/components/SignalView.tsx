@@ -4,6 +4,51 @@ import { api, SignalData } from '../services/api';
 import { FilmStatus } from './FilmCard';
 import { MatchBar } from './MatchMeter';
 
+function SignalContext({ context }: Readonly<{ context: string }>) {
+  const isHeadlines = context.startsWith("Today's headlines:");
+
+  if (isHeadlines) {
+    const lines = context
+      .replace(/^Today's headlines:\n/, '')
+      .split('\n')
+      .filter(l => l.startsWith('- '))
+      .map(l => l.slice(2).trim())
+      .filter(Boolean);
+
+    return (
+      <div className="mt-5 border border-border/50 bg-card/30">
+        <div className="border-b border-border/50 px-4 py-2 flex items-center gap-3">
+          <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-amber/80">
+            Signal Context
+          </span>
+          <span className="h-px flex-1 bg-border/40" />
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">
+            Today's Headlines
+          </span>
+        </div>
+        <ul className="divide-y divide-border/30">
+          {lines.map((headline, i) => (
+            <li key={headline} className="flex items-start gap-4 px-4 py-2.5">
+              <span className="font-mono text-[10px] tabular-nums text-primary/40 mt-px shrink-0 w-5">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <p className="font-mono text-[11px] leading-snug text-muted-foreground">
+                {headline}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground/70">
+      {context}
+    </p>
+  );
+}
+
 const META_BAR = [
   ['SIGNAL', 'ACTIVE'],
   ['SOURCE', 'VAULT + CONTEXT'],
@@ -69,26 +114,22 @@ export function SignalView({
 
       <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-10">
         {/* header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
+        <div className="mb-8">
+          <div className="flex items-start justify-between gap-4">
             <h1 className="font-display text-3xl font-bold uppercase italic tracking-tight text-amber sm:text-4xl lg:text-5xl">
               Tonight's Signal
             </h1>
-            {signal?.context && (
-              <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {signal.context}
-              </p>
-            )}
+            <button
+              onClick={fetchSignal}
+              disabled={loading}
+              aria-label="Regenerate"
+              className="flex items-center gap-2 border border-border/70 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-40"
+            >
+              <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Regenerate
+            </button>
           </div>
-          <button
-            onClick={fetchSignal}
-            disabled={loading}
-            aria-label="Regenerate"
-            className="flex items-center gap-2 border border-border/70 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-40"
-          >
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Regenerate
-          </button>
+          {signal?.context && <SignalContext context={signal.context} />}
         </div>
 
         {/* error */}

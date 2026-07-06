@@ -4,26 +4,40 @@ AI client for intelligent re-ranking and explanations
 import json
 import re
 from typing import Optional
-from anthropic import AsyncAnthropic
+import litellm
 from app.config import get_settings
 
 settings = get_settings()
 
 
 class AIClient:
-    """AI service for re-ranking and generating film curation text"""
+    """
+    Provider-agnostic AI service for re-ranking and generating film curation text.
+
+    Uses litellm, so `ai_model_fast` / `ai_model_smart` in config can point at any
+    supported provider (e.g. "claude-sonnet-4-6", "gpt-4o", "gemini/gemini-2.0-flash",
+    "ollama/llama3") without changing this file.
+    """
 
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or settings.claude_api_key
-        if not self.api_key:
+        self.api_key = api_key or settings.ai_api_key
+        self.available = bool(self.api_key)
+        if not self.available:
             print("⚠️  AI API key not configured - re-ranking disabled")
-            self.client = None
         else:
-            self.client = AsyncAnthropic(api_key=self.api_key)
             print("✅ AI client initialized")
-    
+
     def is_available(self) -> bool:
-        return self.client is not None
+        return self.available
+
+    async def _complete(self, model: str, messages: list[dict], max_tokens: int) -> str:
+        response = await litellm.acompletion(
+            model=model,
+            api_key=self.api_key,
+            max_tokens=max_tokens,
+            messages=messages,
+        )
+        return response.choices[0].message.content.strip()
     
     async def expand_vibe(self, vibe: str) -> str:
         """Expand a vibe query into a richer semantic description for better embedding quality."""
@@ -40,12 +54,11 @@ Write 2-3 sentences describing the aesthetic, mood, visual style, themes, and ci
 Return only the expanded description, no explanation or preamble."""
 
         try:
-            response = await self.client.messages.create(
+            expanded = await self._complete(
                 model=settings.ai_model_fast,
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=200,
-                messages=[{"role": "user", "content": prompt}]
             )
-            expanded = response.content[0].text.strip()
             print(f"🔍 Vibe expanded: {expanded[:100]}…")
             return expanded
         except Exception as e:
@@ -95,12 +108,11 @@ Write a taste profile of 3-4 sentences describing:
 Be specific and cinematic, not generic. No bullet points, just prose."""
 
         try:
-            response = await self.client.messages.create(
+            return await self._complete(
                 model=settings.ai_model_smart,
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=300,
-                messages=[{"role": "user", "content": prompt}]
             )
-            return response.content[0].text.strip()
         except Exception as e:
             print(f"❌ Error building taste profile: {e}")
             return current_profile
@@ -132,25 +144,20 @@ Be specific and cinematic, not generic. No bullet points, just prose."""
         prompt = self._build_rerank_prompt(vibe, movies_text, user_profile, taste_profile)
         
         try:
-            response = await self.client.messages.create(
+            result_text = await self._complete(
                 model=settings.ai_model_smart,
-                max_tokens=900,
-                system=[
-                    {
-                        "type": "text",
-                        "text": "You are a cinematic expert and curator with deep knowledge of film history, genres, and cultural context. Your task is to recommend movies based on vibes and feelings, not just genres.",
-                        "cache_control": {"type": "ephemeral"}
-                    }
-                ],
                 messages=[
                     {
+                        "role": "system",
+                        "content": "You are a cinematic expert and curator with deep knowledge of film history, genres, and cultural context. Your task is to recommend movies based on vibes and feelings, not just genres.",
+                    },
+                    {
                         "role": "user",
-                        "content": prompt
-                    }
-                ]
+                        "content": prompt,
+                    },
+                ],
+                max_tokens=900,
             )
-            
-            result_text = response.content[0].text
             recommendations = self._parse_rerank_response(result_text, candidates)
             print(f"✨ Re-ranked {len(recommendations)} movies")
             return recommendations[:limit]
@@ -269,7 +276,12 @@ Rules:
                     movie['score'] = round(1.0 - (rank - 1) / max(num_ranked, 1) * 0.4, 3)
                     reranked.append(movie)
 
-            # Only return AI-curated results — no reason = not a real match
+            # Fill remaining slots with ChromaDB candidates (no reason — shown without curation text)
+            reranked_titles = {m['title'].lower() for m in reranked}
+            for movie in candidates:
+                if movie['title'].lower() not in reranked_titles:
+                    reranked.append(movie)
+
             return reranked
             
         except Exception as e:
@@ -307,12 +319,11 @@ FILM: [exact title from the list]
 REASON: [2-3 sentence paragraph]"""
 
         try:
-            response = await self.client.messages.create(
+            text = await self._complete(
                 model=settings.ai_model_fast,
-                max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
+                max_tokens=300,
             )
-            text = response.content[0].text.strip()
             film_line = next((l for l in text.split("\n") if l.startswith("FILM:")), None)
             film = film_line.replace("FILM:", "").strip() if film_line else None
             reason_start = text.find("REASON:")
